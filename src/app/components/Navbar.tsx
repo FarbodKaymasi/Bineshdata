@@ -5,7 +5,7 @@ import { useCurrentColors } from "../contexts/ThemeColorsContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { useNavigation } from "../contexts/NavigationContext";
-import { useAuth } from "../App";
+import { useAuth } from "../contexts/AuthContext";
 import { NotificationPanel } from "./NotificationPanel";
 
 type PageType = "dashboard" | "sales" | "products" | "customers" | "warehouse" | "financial" | "ai" | "exhibition" | "settings" | "tutorials" | "support" | "notifications";

@@ -1,3 +1,4 @@
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { DashboardPage } from "./pages/DashboardPage";
 import { SalesPage } from "./pages/SalesPage";
 import { ProductsPage } from "./pages/ProductsPage";
@@ -11,7 +12,7 @@ import { SupportPage } from "./pages/SupportPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { LoginPage } from "./pages/LoginPage";
 import ExhibitionVisits from "./pages/ExhibitionVisits";
-import { useState, createContext, useContext, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Provider } from "react-redux";
 import { store } from "./store";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -27,25 +28,9 @@ import { useCurrentColors } from "./contexts/ThemeColorsContext";
 import { Navbar } from "./components/Navbar";
 import { Sidebar } from "./components/Sidebar";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-
-// Create Auth Context
-interface AuthContextType {
-  isLoggedIn: boolean;
-  setIsLoggedIn: (value: boolean) => void;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
-}
 
 function MainContent() {
   const { activePage } = useNavigation();
@@ -106,57 +91,45 @@ function AppContent() {
 }
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    // Initialize from localStorage
-    const saved = localStorage.getItem('isLoggedIn');
-    return saved === 'true';
-  });
-
-  // Save to localStorage whenever login state changes
-  useEffect(() => {
-    localStorage.setItem('isLoggedIn', String(isLoggedIn));
-  }, [isLoggedIn]);
-
-  const logout = () => {
-    setIsLoggedIn(false);
-    localStorage.removeItem('isLoggedIn');
-  };
-
-  if (!isLoggedIn) {
-    return (
-      <ThemeProvider>
-        <LoginPage setIsLoggedIn={setIsLoggedIn} />
-      </ThemeProvider>
-    );
-  }
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   return (
     <ErrorBoundary>
       <Provider store={store}>
         <ThemeProvider>
-          <ThemeColorsProvider>
-            <SettingsProvider>
-              <CustomersProvider>
-                <ReportDataProvider>
-                  <ExhibitionVisitsProvider>
-                    <SidebarProvider>
-                      <NavigationProvider>
-                        <SettingsTabProvider>
-                          <DndProvider backend={HTML5Backend}>
-                            <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, logout }}>
-                              <AppContent />
-                            </AuthContext.Provider>
-                          </DndProvider>
-                        </SettingsTabProvider>
-                      </NavigationProvider>
-                    </SidebarProvider>
-                  </ExhibitionVisitsProvider>
-                </ReportDataProvider>
-              </CustomersProvider>
-            </SettingsProvider>
-          </ThemeColorsProvider>
+          <AuthProvider>
+            <ThemeColorsProvider>
+              <SettingsProvider>
+                <CustomersProvider>
+                  <ReportDataProvider>
+                    <ExhibitionVisitsProvider>
+                      <SidebarProvider>
+                        <NavigationProvider>
+                          <SettingsTabProvider>
+                            <DndProvider backend={HTML5Backend}>
+                              <AppRouter isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+                            </DndProvider>
+                          </SettingsTabProvider>
+                        </NavigationProvider>
+                      </SidebarProvider>
+                    </ExhibitionVisitsProvider>
+                  </ReportDataProvider>
+                </CustomersProvider>
+              </SettingsProvider>
+            </ThemeColorsProvider>
+          </AuthProvider>
         </ThemeProvider>
       </Provider>
     </ErrorBoundary>
   );
+}
+
+function AppRouter({ isLoggedIn, setIsLoggedIn }: { isLoggedIn: boolean; setIsLoggedIn: (value: boolean) => void }) {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated && !isLoggedIn) {
+    return <LoginPage setIsLoggedIn={setIsLoggedIn} />;
+  }
+
+  return <AppContent />;
 }

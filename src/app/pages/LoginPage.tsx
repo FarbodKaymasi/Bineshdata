@@ -4,6 +4,8 @@ import svgPaths from "../../imports/svg-lkj34ktpju";
 import imgMoonAndStars from "figma:asset/27bb79d6090e7d398ac0df5f4fd148d65b24431d.png";
 import { imgRectangle34624214 } from "../../imports/svg-zgd3h";
 import { useTheme } from "../contexts/ThemeContext";
+import { useAuth } from "../contexts/AuthContext";
+import { authApi } from "../utils/auth";
 
 interface LoginPageProps {
   setIsLoggedIn: (value: boolean) => void;
@@ -18,8 +20,10 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsModalTab, setTermsModalTab] = useState<"terms" | "privacy">("terms");
+  const [error, setError] = useState<string | null>(null);
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const { login } = useAuth();
 
   // Timer for resend OTP
   useEffect(() => {
@@ -34,21 +38,34 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (phoneNumber.length !== 11) {
-      alert("لطفا شماره موبایل را به درستی وارد کنید");
+      setError("لطفا شماره موبایل را به درستی وارد کنید");
       return;
     }
     
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    setStep("otp");
-    setTimer(120); // 2 minutes
+    setError(null);
     
-    // Focus first OTP input
-    setTimeout(() => {
-      otpInputs.current[0]?.focus();
-    }, 100);
+    try {
+      // Format phone number with +98 prefix
+      const formattedPhone = "+98" + phoneNumber.substring(1);
+      const response = await authApi.signIn(formattedPhone);
+      
+      if (response.status === "success") {
+        setStep("otp");
+        setTimer(120); // 2 minutes
+        
+        // Focus first OTP input
+        setTimeout(() => {
+          otpInputs.current[0]?.focus();
+        }, 100);
+      } else {
+        setError(response.message || "خطا در ارسال کد تایید");
+      }
+    } catch (err: any) {
+      setError(err.message || "خطا در ارسال کد تایید");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -92,29 +109,53 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
     const otpCode = otp.join("");
     
     if (otpCode.length !== 6) {
-      alert("لطفا کد 6 رقمی را کامل وارد کنید");
+      setError("لطفا کد 6 رقمی را کامل وارد کنید");
       return;
     }
 
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
+    setError(null);
     
-    // Navigate to dashboard
-    setIsLoggedIn(true);
+    try {
+      const response = await authApi.verifyOtp(phoneNumber, otpCode);
+      
+      if (response.status === "success" && response.body) {
+        // Tokens are already saved in cookies by authApi.verifyOtp
+        login();
+        setIsLoggedIn(true);
+      } else {
+        setError(response.message || "کد تایید نامعتبر است");
+      }
+    } catch (err: any) {
+      setError(err.message || "کد تایید نامعتبر است");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResendOtp = async () => {
     if (timer > 0) return;
     
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    setTimer(120);
-    setOtp(["", "", "", "", "", ""]);
-    otpInputs.current[0]?.focus();
+    setError(null);
+    
+    try {
+      // Format phone number with +98 prefix
+      const formattedPhone = "+98" + phoneNumber.substring(1);
+      const response = await authApi.signIn(formattedPhone);
+      
+      if (response.status === "success") {
+        setTimer(120);
+        setOtp(["", "", "", "", "", ""]);
+        otpInputs.current[0]?.focus();
+      } else {
+        setError(response.message || "خطا در ارسال کد تایید");
+      }
+    } catch (err: any) {
+      setError(err.message || "خطا در ارسال کد تایید");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -218,6 +259,9 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                     maxLength={11}
                   />
                 </div>
+                {error && (
+                  <p className="text-xs text-[#e92c2c] mt-1">{error}</p>
+                )}
               </div>
 
               <button
@@ -305,6 +349,12 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   />
                 ))}
               </div>
+              
+              {error && (
+                <div className="text-center">
+                  <p className="text-xs text-[#e92c2c]">{error}</p>
+                </div>
+              )}
 
               <button
                 type="submit"
