@@ -1,0 +1,763 @@
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { ChevronLeft, ChevronRight, Edit, Filter as FilterIcon, History, X, Trash2, Download } from "lucide-react";
+import { useAppSelector, useAppDispatch } from "../store/hooks";
+import { removeFilter, clearAllFilters, setOpenColumnFilter } from "../store/filtersSlice";
+import { ColumnCustomizer, ColumnConfig } from "./ColumnCustomizer";
+import { PurchaseHistoryModal } from "./PurchaseHistoryModal";
+import { FilterPanel } from "./FilterPanel";
+import { CustomColumnCell } from "./CustomColumnCell";
+import { useCurrentColors } from "../contexts/ThemeColorsContext";
+import { SavedFiltersButton } from "./SavedFiltersButton";
+import { getCallHistoryByCustomer, statusLabels } from "../data/callsData";
+import { generateInvoicePDF } from "../utils/invoiceGenerator";
+
+interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  totalCalls: number;
+  lastCall: string;
+  satisfaction: number;
+  province?: string;
+  city?: string;
+  neighborhood?: string;
+}
+
+const defaultColumns: ColumnConfig[] = [
+  { key: "name", label: "نام مشتری", visible: true },
+  { key: "phone", label: "شماره تماس", visible: true },
+  { key: "email", label: "ایمیل", visible: true },
+  { key: "province", label: "استان", visible: true },
+  { key: "city", label: "شهر", visible: true },
+  { key: "neighborhood", label: "محله", visible: true },
+  { key: "totalCalls", label: "تعداد تماس‌ها", visible: true },
+  { key: "lastCall", label: "تاریخ آخرین خرید", visible: true },
+  { key: "history", label: "تاریخچه خریدها", visible: true },
+  { key: "actions", label: "عملیات", visible: true },
+];
+
+interface CustomersTableProps {
+  customers: Customer[];
+  customColumns?: ColumnConfig[];
+  setCustomColumns?: (columns: ColumnConfig[]) => void;
+  handleEdit?: (customerId: string) => void;
+  handleDelete?: (customerId: string) => void;
+}
+
+export function CustomersTableWithFilters({ customers, customColumns, setCustomColumns, handleEdit, handleDelete }: CustomersTableProps) {
+  const dispatch = useAppDispatch();
+  const TABLE_ID = "customers-table";
+  const { activeFilters, openColumnFilter } = useAppSelector(
+    (state) => state.filters
+  );
+  const tableFilters = activeFilters[TABLE_ID] || [];
+  const colors = useCurrentColors();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [localVisibleColumns, setLocalVisibleColumns] = useState<ColumnConfig[]>(customColumns || defaultColumns);
+  const [isCallHistoryModalOpen, setIsCallHistoryModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customColumnData, setCustomColumnData] = useState<Record<string, Record<string, string | string[]>>>({});
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  // Load custom column data from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('customColumnData_customers-table');
+    if (saved) {
+      try {
+        setCustomColumnData(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load custom column data:', e);
+      }
+    }
+  }, []);
+
+  // Save custom column data to localStorage
+  const handleCustomColumnChange = (rowId: number, columnKey: string, value: string | string[]) => {
+    setCustomColumnData((prev) => {
+      const newData = {
+        ...prev,
+        [rowId]: {
+          ...(prev[rowId] || {}),
+          [columnKey]: value,
+        },
+      };
+      localStorage.setItem('customColumnData_customers-table', JSON.stringify(newData));
+      return newData;
+    });
+  };
+
+  // Sync local columns with parent when customColumns changes
+  useEffect(() => {
+    if (customColumns) {
+      setLocalVisibleColumns(customColumns);
+    }
+  }, [customColumns]);
+
+  const handleFilterClick = (column: string) => {
+    dispatch(setOpenColumnFilter(column));
+  };
+
+  const handleColumnsChange = useCallback((newColumns: ColumnConfig[]) => {
+    setLocalVisibleColumns(newColumns);
+    if (setCustomColumns) {
+      setCustomColumns(newColumns);
+    }
+  }, [setCustomColumns]);
+
+  // Filter only visible columns
+  const activeColumns = localVisibleColumns.filter(col => col.visible);
+
+  // Render cell content based on column key
+  const renderCell = (customer: Customer, column: ColumnConfig) => {
+    // Check if this is a custom column
+    if (column.isCustom) {
+      return (
+        <td key={column.key} className="p-3">
+          <CustomColumnCell
+            column={column}
+            rowId={Number(customer.id)}
+            value={customColumnData[customer.id]?.[column.key] || ""}
+            onChange={handleCustomColumnChange}
+          />
+        </td>
+      );
+    }
+
+    // Default columns
+    switch (column.key) {
+      case "name":
+        return (
+          <td key={column.key} className="p-3 text-sm text-[#1c1c1c] dark:text-white font-medium" dir="auto">
+            {customer.name}
+          </td>
+        );
+      case "phone":
+        return (
+          <td key={column.key} className="p-3 text-sm text-[#585757] dark:text-[#b8bfc8]" dir="ltr">
+            {customer.phone}
+          </td>
+        );
+      case "email":
+        return (
+          <td key={column.key} className="p-3 text-sm text-[#585757] dark:text-[#b8bfc8]" dir="ltr">
+            {customer.email}
+          </td>
+        );
+      case "province":
+        return (
+          <td key={column.key} className="p-3 text-sm text-[#585757] dark:text-[#b8bfc8]" dir="rtl">
+            {customer.province || "-"}
+          </td>
+        );
+      case "city":
+        return (
+          <td key={column.key} className="p-3 text-sm text-[#585757] dark:text-[#b8bfc8]" dir="rtl">
+            {customer.city || "-"}
+          </td>
+        );
+      case "neighborhood":
+        return (
+          <td key={column.key} className="p-3 text-sm text-[#585757] dark:text-[#b8bfc8]" dir="rtl">
+            {customer.neighborhood || "-"}
+          </td>
+        );
+      case "totalCalls":
+        return (
+          <td key={column.key} className="p-3 text-sm text-[#585757] dark:text-[#b8bfc8] text-center">
+            {customer.totalCalls}
+          </td>
+        );
+      case "lastCall":
+        return (
+          <td key={column.key} className="p-3 text-sm text-[#585757] dark:text-[#b8bfc8]">
+            {customer.lastCall}
+          </td>
+        );
+      case "history":
+        return (
+          <td key={column.key} className="p-3">
+            <button
+              onClick={() => {
+                setSelectedCustomer(customer);
+                setIsCallHistoryModalOpen(true);
+              }}
+              className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:shadow-md flex items-center gap-2 whitespace-nowrap"
+              style={{
+                backgroundColor: colors.primary + "15",
+                color: colors.primary,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = colors.primary;
+                e.currentTarget.style.color = "#ffffff";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = colors.primary + "15";
+                e.currentTarget.style.color = colors.primary;
+              }}
+            >
+              <History className="w-4 h-4" />
+              <span>مشاهده خریدها</span>
+            </button>
+          </td>
+        );
+      case "actions":
+        return (
+          <td key={column.key} className="p-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (handleEdit) {
+                    handleEdit(customer.id);
+                  }
+                }}
+                className="p-2 text-[#ff9800] hover:bg-[#fff3e0] dark:hover:bg-[#3a2d1a] rounded-lg transition-colors"
+                title="ویرایش"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  if (handleDelete) {
+                    handleDelete(customer.id);
+                  }
+                }}
+                className="p-2 text-[#f44336] hover:bg-[#ffcdd2] dark:hover:bg-[#5c2e2e] rounded-lg transition-colors"
+                title="حذف"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  generateInvoicePDF(customer.id, customer.name, customer.phone, customer.email);
+                }}
+                className="p-2 text-[#4caf50] hover:bg-[#e8f5e9] dark:hover:bg-[#2e5c3a] rounded-lg transition-colors"
+                title="دانلود فاکتور"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            </div>
+          </td>
+        );
+      default:
+        return <td key={column.key} className="p-3"></td>;
+    }
+  };
+
+  // Apply filters to data
+  const filteredCustomers = useMemo(() => {
+    let result = customers;
+
+    // Filter by custom tags
+    if (selectedTags.length > 0) {
+      result = result.filter((customer) => {
+        // Get all tag columns
+        const tagColumns = localVisibleColumns.filter(col => col.isCustom && col.type === 'tags');
+        
+        // Check if any of the selected tags are in this customer's data
+        return tagColumns.some(col => {
+          const customerTags = customColumnData[customer.id]?.[col.key];
+          if (!customerTags) return false;
+          
+          const tagsArray = Array.isArray(customerTags) ? customerTags : [customerTags];
+          return tagsArray.some(tag => selectedTags.includes(tag));
+        });
+      });
+    }
+
+    tableFilters.forEach((filter) => {
+      result = result.filter((customer) => {
+        const value = String(customer[filter.column as keyof Customer] || "");
+        const filterValue = filter.value.toLowerCase();
+        const cellValue = value.toLowerCase();
+
+        switch (filter.operator) {
+          case "equals":
+            return cellValue === filterValue;
+          case "notEquals":
+            return cellValue !== filterValue;
+          case "contains":
+            return cellValue.includes(filterValue);
+          case "greaterThan":
+            return Number(cellValue) > Number(filterValue);
+          case "lessThan":
+            return Number(cellValue) < Number(filterValue);
+          case "greaterThanOrEqual":
+            return Number(cellValue) >= Number(filterValue);
+          case "lessThanOrEqual":
+            return Number(cellValue) <= Number(filterValue);
+          case "hasIncompleteData":
+            return value === "" || value === null || value === undefined;
+          case "hasCompleteData":
+            return value !== "" && value !== null && value !== undefined;
+          case "isEmpty":
+            return value === "" || value === null || value === undefined;
+          default:
+            return true;
+        }
+      });
+    });
+
+    return result;
+  }, [tableFilters, customers, selectedTags, localVisibleColumns, customColumnData]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredCustomers.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const currentPageData = filteredCustomers.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [tableFilters, rowsPerPage]);
+
+  const getOperatorLabel = (operator: string) => {
+    const labels: Record<string, string> = {
+      equals: "=",
+      notEquals: "≠",
+      contains: "∋",
+      greaterThan: ">",
+      lessThan: "<",
+      greaterThanOrEqual: "≥",
+      lessThanOrEqual: "≤",
+    };
+    return labels[operator] || operator;
+  };
+
+  return (
+    <div 
+      className="rounded-lg border overflow-hidden transition-colors duration-300"
+      style={{
+        backgroundColor: colors.cardBackground,
+        borderColor: colors.border
+      }}
+    >
+      {/* Header with Saved Filters Button */}
+      <div 
+        className="p-3 md:p-4 border-b flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0" 
+        dir="rtl"
+        style={{ borderColor: colors.border }}
+      >
+        <h2 
+          className="text-lg md:text-xl font-semibold" 
+          dir="auto"
+          style={{ color: colors.textPrimary }}
+        >
+          مشتریان
+        </h2>
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+          <SavedFiltersButton tableId="customers-table" />
+          <ColumnCustomizer 
+            tableId="customers-table" 
+            defaultColumns={customColumns}
+            onColumnsChange={setCustomColumns}
+          />
+        </div>
+      </div>
+
+      {/* Active Filters Display */}
+      {tableFilters.length > 0 && (
+        <div 
+          className="p-4 border-b" 
+          dir="rtl"
+          style={{
+            backgroundColor: colors.backgroundSecondary,
+            borderColor: colors.border
+          }}
+        >
+          <div className="flex items-center gap-2 flex-wrap">
+            <span 
+              className="text-sm"
+              style={{ color: colors.textSecondary }}
+            >
+              فیلترهای فعال:
+            </span>
+            {tableFilters.map((filter) => (
+              <div
+                key={filter.id}
+                className="flex items-center gap-1 px-2 py-1 border rounded text-xs"
+                style={{
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border
+                }}
+              >
+                <span style={{ color: colors.textPrimary }}>
+                  {localVisibleColumns.find((c) => c.key === filter.column)?.customLabel || 
+                   localVisibleColumns.find((c) => c.key === filter.column)?.label ||
+                   filter.column}{" "}
+                  <span style={{ color: colors.primary }}>{getOperatorLabel(filter.operator)}</span>{" "}
+                  {filter.value}
+                </span>
+                <button
+                  onClick={() => dispatch(removeFilter({ tableId: TABLE_ID, filterId: filter.id }))}
+                  style={{ color: colors.error }}
+                  className="hover:opacity-70"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() => dispatch(clearAllFilters(TABLE_ID))}
+              className="text-xs hover:underline"
+              style={{ color: colors.error }}
+            >
+              پاک کردن همه
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tag Filters */}
+      {localVisibleColumns.some(col => col.isCustom && col.type === 'tags' && col.options && col.options.length > 0) && (
+        <div 
+          className="p-4 border-b" 
+          dir="rtl"
+          style={{ borderColor: colors.border }}
+        >
+          <div className="flex items-center gap-2 flex-wrap">
+            {localVisibleColumns
+              .filter(col => col.isCustom && col.type === 'tags' && col.options && col.options.length > 0)
+              .flatMap(col => col.options || [])
+              .map((option) => {
+                const isSelected = selectedTags.includes(option.value);
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setSelectedTags(prev => 
+                        prev.includes(option.value)
+                          ? prev.filter(t => t !== option.value)
+                          : [...prev, option.value]
+                      );
+                    }}
+                    className="px-3 py-1.5 border rounded-lg text-sm transition-all"
+                    style={{
+                      backgroundColor: isSelected ? option.color : colors.cardBackground,
+                      borderColor: isSelected ? 'transparent' : colors.border,
+                      color: isSelected ? "white" : option.color,
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })
+            }
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[1400px]" dir="rtl">
+          <thead>
+            <tr 
+              className="border-b"
+              style={{
+                backgroundColor: colors.backgroundSecondary,
+                borderColor: colors.border
+              }}
+            >
+              {activeColumns.map((column, index, array) => (
+                <th
+                  key={column.key}
+                  className="p-3 text-sm font-medium text-right"
+                  style={{ color: colors.textSecondary }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-between gap-2 group cursor-pointer flex-1" onClick={() => handleFilterClick(column.key)}>
+                      <span 
+                        className="transition-colors text-right flex-1"
+                        style={{ color: colors.textSecondary }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = colors.primary;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = colors.textSecondary;
+                        }}
+                      >
+                        {column.customLabel || column.label}
+                      </span>
+                      {column.key !== 'actions' && !(column.isCustom && column.type === 'tags') && (
+                        <div
+                          className="p-1 rounded transition-colors"
+                          style={{
+                            color: tableFilters.some((f) => f.column === column.key)
+                              ? colors.primary
+                              : colors.textSecondary
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = colors.cardBackground;
+                            e.currentTarget.style.color = colors.primary;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = tableFilters.some((f) => f.column === column.key)
+                              ? colors.primary
+                              : colors.textSecondary;
+                          }}
+                        >
+                          <FilterIcon className="w-4 h-4" />
+                        </div>
+                      )}
+                    </div>
+                    {index < array.length - 1 && (
+                      <div className="h-6 w-px" style={{ backgroundColor: colors.border }}></div>
+                    )}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {currentPageData.map((customer) => (
+              <tr
+                key={customer.id}
+                className="border-b transition-colors"
+                style={{
+                  borderColor: colors.border
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = colors.backgroundSecondary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                {activeColumns.map((column) => 
+                  renderCell(customer, column)
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {filteredCustomers.length === 0 && (
+          <div className="p-8 text-center text-[#969696] dark:text-[#8b92a8]" dir="rtl">
+            هیچ مشتری با این فیلترها یافت نشد
+          </div>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {filteredCustomers.length > 0 && (
+        <div 
+          className="p-3 md:p-4 border-t flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-0" 
+          dir="rtl"
+          style={{
+            borderColor: colors.border
+          }}
+        >
+          {/* Rows per page selector */}
+          <div className="flex items-center gap-2 justify-between md:justify-start">
+            <div className="flex items-center gap-2">
+              <span className="text-xs md:text-sm whitespace-nowrap" style={{ color: colors.textSecondary }}>نمایش:</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                className="px-2 md:px-3 py-1 md:py-1.5 border rounded-lg text-xs md:text-sm focus:outline-none transition-colors"
+                style={{
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border,
+                  color: colors.textPrimary
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = colors.primary;
+                  e.currentTarget.style.boxShadow = `0 0 0 2px ${colors.primary}20`;
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = colors.border;
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <option value={5}>5 سطر</option>
+                <option value={10}>10 سطر</option>
+                <option value={20}>20 سطر</option>
+                <option value={50}>50 سطر</option>
+                <option value={100}>100 سطر</option>
+              </select>
+            </div>
+            <span className="text-xs md:text-sm whitespace-nowrap md:hidden" style={{ color: colors.textSecondary }}>
+              {startIndex + 1} تا {Math.min(endIndex, filteredCustomers.length)} از {filteredCustomers.length}
+            </span>
+          </div>
+
+          <span className="text-xs md:text-sm whitespace-nowrap hidden md:inline" style={{ color: colors.textSecondary }}>
+            نمایش {startIndex + 1} تا {Math.min(endIndex, filteredCustomers.length)} از {filteredCustomers.length} مورد
+          </span>
+
+          {/* Page navigation */}
+          <div className="flex items-center gap-1.5 md:gap-2 justify-center md:justify-end">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{
+                color: colors.textSecondary
+              }}
+              onMouseEnter={(e) => {
+                if (currentPage !== 1) {
+                  e.currentTarget.style.backgroundColor = colors.backgroundSecondary;
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <ChevronRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
+            </button>
+
+            {/* Page numbers */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((page) => {
+                  // Show first page, last page, current page, and neighbors
+                  return (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  );
+                })
+                .map((page, index, array) => {
+                  // Add ellipsis if there's a gap
+                  const prevPage = array[index - 1];
+                  const showEllipsis = prevPage && page - prevPage > 1;
+
+                  return (
+                    <div key={page} className="flex items-center gap-1">
+                      {showEllipsis && (
+                        <span className="px-2" style={{ color: colors.textSecondary }}>...</span>
+                      )}
+                      <button
+                        onClick={() => setCurrentPage(page)}
+                        className={`min-w-[32px] h-8 px-2 flex items-center justify-center rounded text-sm transition-colors`}
+                        style={{
+                          backgroundColor: currentPage === page ? colors.primary : colors.cardBackground,
+                          borderWidth: '1px',
+                          borderStyle: 'solid',
+                          borderColor: currentPage === page ? colors.primary : colors.border,
+                          color: currentPage === page ? '#ffffff' : colors.textPrimary
+                        }}
+                        onMouseEnter={(e) => {
+                          if (currentPage !== page) {
+                            e.currentTarget.style.backgroundColor = colors.backgroundSecondary;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (currentPage !== page) {
+                            e.currentTarget.style.backgroundColor = colors.cardBackground;
+                          }
+                        }}
+                      >
+                        {page}
+                      </button>
+                    </div>
+                  );
+                })
+              }
+            </div>
+
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1.5 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{
+                color: colors.textSecondary
+              }}
+              onMouseEnter={(e) => {
+                if (currentPage !== totalPages) {
+                  e.currentTarget.style.backgroundColor = colors.backgroundSecondary;
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <ChevronLeft className="w-5 h-5" style={{ color: colors.textSecondary }} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Filter Panel */}
+      {openColumnFilter && (
+        <FilterPanel
+          tableId={TABLE_ID}
+          column={openColumnFilter}
+          columnLabel={localVisibleColumns.find((c) => c.key === openColumnFilter)?.label || openColumnFilter}
+          onClose={() => dispatch(setOpenColumnFilter(null))}
+        />
+      )}
+
+      {/* Call History Modal */}
+      {isCallHistoryModalOpen && selectedCustomer && (
+        <PurchaseHistoryModal
+          isOpen={isCallHistoryModalOpen}
+          onClose={() => setIsCallHistoryModalOpen(false)}
+          customerName={selectedCustomer.name}
+          phoneNumber={selectedCustomer.phone}
+          purchaseHistory={[
+            {
+              id: 1,
+              date: "1403/10/15",
+              invoiceNumber: "1400",
+              productName: "فرش 1200 شانه طرح خرید",
+              quantity: 1,
+              unitPrice: 10000000,
+              totalPrice: 10000000,
+              paymentStatus: "پرداخت شده",
+              orderStatus: "تحویل شده"
+            },
+            {
+              id: 2,
+              date: "1403/09/20",
+              invoiceNumber: "1325",
+              productName: "موکت 700 شانه کد 2054",
+              quantity: 2,
+              unitPrice: 5500000,
+              totalPrice: 11000000,
+              paymentStatus: "پرداخت شده",
+              orderStatus: "تحویل شده"
+            },
+            {
+              id: 3,
+              date: "1403/08/10",
+              invoiceNumber: "1256",
+              productName: "فرش 1000 شانه طرح کلاسیک",
+              quantity: 1,
+              unitPrice: 8500000,
+              totalPrice: 8500000,
+              paymentStatus: "پرداخت شده",
+              orderStatus: "تحویل شده"
+            },
+            {
+              id: 4,
+              date: "1403/07/05",
+              invoiceNumber: "1189",
+              productName: "زیر انداز 500 شانه",
+              quantity: 3,
+              unitPrice: 2000000,
+              totalPrice: 6000000,
+              paymentStatus: "پرداخت شده",
+              orderStatus: "تحویل شده"
+            },
+            {
+              id: 5,
+              date: "1403/06/25",
+              invoiceNumber: "1145",
+              productName: "فرش ماشینی 1500 شانه",
+              quantity: 1,
+              unitPrice: 12000000,
+              totalPrice: 12000000,
+              paymentStatus: "در انتظار",
+              orderStatus: "در حال ارسال"
+            }
+          ]}
+        />
+      )}
+    </div>
+  );
+}
