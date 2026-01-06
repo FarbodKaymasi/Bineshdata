@@ -17,10 +17,10 @@ import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { removeFilter, clearAllFilters, setOpenColumnFilter } from "../store/filtersSlice";
 import { FilterPanel } from "./FilterPanel";
 import { SavedFiltersButton } from "./SavedFiltersButton";
-import { allSalesData, SaleItem } from "../data/salesData";
+import { SaleItem } from "../data/salesData";
 import { InvoiceModal } from "./InvoiceModal";
 
-const defaultColumns: ColumnConfig[] = [
+const defaultColumnsConfig: ColumnConfig[] = [
   { key: "invoiceNumber", label: "شماره فاکتور", visible: true },
   { key: "productName", label: "محصول", visible: true },
   { key: "category", label: "دسته", visible: true },
@@ -34,7 +34,12 @@ const defaultColumns: ColumnConfig[] = [
   { key: "actions", label: "عملیات", visible: true },
 ];
 
-export function SalesTable() {
+interface SalesTableProps {
+  data?: SaleItem[];
+  defaultColumns?: ColumnConfig[];
+}
+
+export function SalesTable({ data = [], defaultColumns = defaultColumnsConfig }: SalesTableProps) {
   const colors = useCurrentColors();
   const dispatch = useAppDispatch();
   const TABLE_ID = "sales-table";
@@ -49,7 +54,7 @@ export function SalesTable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSaleForInvoice, setSelectedSaleForInvoice] = useState<SaleItem | null>(null);
 
-  const allSales: SaleItem[] = allSalesData;
+  const allSales: SaleItem[] = data;
 
   const activeColumns = customColumns.filter((col) => col.visible);
 
@@ -206,7 +211,7 @@ export function SalesTable() {
         item.customer.includes(searchQuery) ||
         item.category.includes(searchQuery)
     );
-  }, [searchQuery]);
+  }, [searchQuery, allSales]);
 
   const filteredSales = useMemo(() => {
     let result = searchFilteredItems;

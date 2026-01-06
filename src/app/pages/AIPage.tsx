@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Mic, Plus, AlertTriangle, Sparkles, Lightbulb, X, Trash2 } from "lucide-react";
+import { Send, Mic, Plus, AlertTriangle, Sparkles, Lightbulb, X, Trash2, Loader2 } from "lucide-react";
 import { useCurrentColors } from "../contexts/ThemeColorsContext";
 
 interface Message {
@@ -7,6 +7,7 @@ interface Message {
   text: string;
   sender: "user" | "ai";
   timestamp: Date;
+  isStreaming?: boolean;
 }
 
 type TabType = "limitations" | "capabilities" | "examples";
@@ -55,8 +56,106 @@ export function AIPage() {
   const [customPrompts, setCustomPrompts] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPrompt, setNewPrompt] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const streamingMessageIdRef = useRef<number | null>(null);
   const colors = useCurrentColors();
+
+  // WebSocket connection
+  useEffect(() => {
+    const connectWebSocket = () => {
+      try {
+        setIsConnecting(true);
+        setConnectionError(null);
+        
+        const ws = new WebSocket("wss://panel.bineshafzar.ir/api/WebSocket/ChatStreamSocket/Get");
+        
+        ws.onopen = () => {
+          console.log("WebSocket connected");
+          setIsConnecting(false);
+          setConnectionError(null);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            
+            if (data.Type === "token") {
+              const payload = data.Payload;
+              
+              // If payload is empty, streaming is complete
+              if (payload === "") {
+                streamingMessageIdRef.current = null;
+                return;
+              }
+
+              // If this is a new stream, create a new message
+              if (streamingMessageIdRef.current === null) {
+                const newId = Date.now();
+                streamingMessageIdRef.current = newId;
+                
+                const aiMessage: Message = {
+                  id: newId,
+                  text: payload,
+                  sender: "ai",
+                  timestamp: new Date(),
+                  isStreaming: true,
+                };
+                
+                setMessages((prev) => [...prev, aiMessage]);
+              } else {
+                // Append to existing streaming message
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === streamingMessageIdRef.current
+                      ? { ...msg, text: msg.text + payload }
+                      : msg
+                  )
+                );
+              }
+            }
+          } catch (error) {
+            console.error("Error parsing WebSocket message:", error);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error("WebSocket error:", error);
+          setConnectionError("خطا در اتصال به سرور");
+          setIsConnecting(false);
+        };
+
+        ws.onclose = () => {
+          console.log("WebSocket disconnected");
+          setIsConnecting(false);
+          // Attempt to reconnect after 3 seconds
+          setTimeout(() => {
+            if (wsRef.current === ws) {
+              connectWebSocket();
+            }
+          }, 3000);
+        };
+
+        wsRef.current = ws;
+      } catch (error) {
+        console.error("Error creating WebSocket:", error);
+        setConnectionError("خطا در برقراری اتصال");
+        setIsConnecting(false);
+      }
+    };
+
+    connectWebSocket();
+
+    // Cleanup on unmount
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, []);
 
   // Load custom prompts from localStorage
   useEffect(() => {
@@ -96,18 +195,21 @@ export function AIPage() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const messageText = inputValue;
     setInputValue("");
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: Date.now() + 1,
-        text: "سلام! من یک دستیار هوش مصنوعی هستم که برای کمک به شما در تحلیل داده‌های داشبورد طراحی شده‌ام. چطور می‌توانم کمک کنم؟",
-        sender: "ai",
-        timestamp: new Date(),
+    // Send message to WebSocket in the correct format
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      const payload = {
+        messages: [
+          {
+            role: "user",
+            content: messageText
+          }
+        ]
       };
-      setMessages((prev) => [...prev, aiMessage]);
-    }, 1000);
+      wsRef.current.send(JSON.stringify(payload));
+    }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -242,6 +344,22 @@ export function AIPage() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        {/* Connection Status */}
+        {(isConnecting || connectionError) && (
+          <div 
+            className="mb-4 px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
+            style={{ 
+              backgroundColor: connectionError ? colors.error + '20' : colors.primary + '20',
+              color: connectionError ? colors.error : colors.primary
+            }}
+          >
+            {isConnecting && <Loader2 className="w-4 h-4 animate-spin" />}
+            <span>
+              {connectionError || "در حال اتصال به سرور..."}
+            </span>
+          </div>
+        )}
+
         {messages.length === 0 ? (
           // Welcome Screen
           <div className="max-w-3xl w-full space-y-4 sm:space-y-8">

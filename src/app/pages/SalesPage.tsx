@@ -148,7 +148,7 @@ export function SalesPage() {
       <ProvincesSalesMap />
 
       {/* Sales Table */}
-      <SalesTable />
+      <SalesTable data={allSalesData} />
 
       {/* Calendar Modal */}
       {showCalendar && (

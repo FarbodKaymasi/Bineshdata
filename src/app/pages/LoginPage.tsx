@@ -6,11 +6,9 @@ import { imgRectangle34624214 } from "../../imports/svg-zgd3h";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAuth } from "../contexts/AuthContext";
 import { authApi } from "../utils/auth";
-
 interface LoginPageProps {
   setIsLoggedIn: (value: boolean) => void;
 }
-
 export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -24,7 +22,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
   const { isDarkMode, toggleDarkMode } = useTheme();
   const { login } = useAuth();
-
   // Timer for resend OTP
   useEffect(() => {
     if (timer > 0) {
@@ -34,26 +31,25 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
       return () => clearInterval(interval);
     }
   }, [timer]);
-
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (phoneNumber.length !== 11) {
       setError("لطفا شماره موبایل را به درستی وارد کنید");
       return;
     }
-    
+   
     setIsLoading(true);
     setError(null);
-    
+   
     try {
       // Format phone number with +98 prefix
       const formattedPhone = "+98" + phoneNumber.substring(1);
       const response = await authApi.signIn(formattedPhone);
-      
+     
       if (response.status === "success") {
         setStep("otp");
         setTimer(120); // 2 minutes
-        
+       
         // Focus first OTP input
         setTimeout(() => {
           otpInputs.current[0]?.focus();
@@ -67,58 +63,53 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
       setIsLoading(false);
     }
   };
-
   const handleOtpChange = (index: number, value: string) => {
     // Only allow numbers
     if (value && !/^\d$/.test(value)) return;
-
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-
     // Auto focus next input
     if (value && index < 5) {
       otpInputs.current[index + 1]?.focus();
     }
   };
-
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       otpInputs.current[index - 1]?.focus();
     }
   };
-
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData("text").slice(0, 6);
     const newOtp = [...otp];
-    
+   
     for (let i = 0; i < pastedData.length; i++) {
       if (/^\d$/.test(pastedData[i])) {
         newOtp[i] = pastedData[i];
       }
     }
-    
+   
     setOtp(newOtp);
     const lastFilledIndex = Math.min(pastedData.length, 5);
     otpInputs.current[lastFilledIndex]?.focus();
   };
-
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const otpCode = otp.join("");
-    
+   
     if (otpCode.length !== 6) {
       setError("لطفا کد 6 رقمی را کامل وارد کنید");
       return;
     }
-
     setIsLoading(true);
     setError(null);
-    
+   
     try {
-      const response = await authApi.verifyOtp(phoneNumber, otpCode);
-      
+      // Format phone number with +98 prefix
+      const formattedPhone = "+98" + phoneNumber.substring(1);
+      const response = await authApi.verifyOtp(formattedPhone, otpCode);
+     
       if (response.status === "success" && response.body) {
         // Tokens are already saved in cookies by authApi.verifyOtp
         login();
@@ -132,18 +123,17 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
       setIsLoading(false);
     }
   };
-
   const handleResendOtp = async () => {
     if (timer > 0) return;
-    
+   
     setIsLoading(true);
     setError(null);
-    
+   
     try {
       // Format phone number with +98 prefix
       const formattedPhone = "+98" + phoneNumber.substring(1);
       const response = await authApi.signIn(formattedPhone);
-      
+     
       if (response.status === "success") {
         setTimer(120);
         setOtp(["", "", "", "", "", ""]);
@@ -157,13 +147,11 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
       setIsLoading(false);
     }
   };
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
-
   return (
     <div className="min-h-screen bg-[#f7f9fb] dark:bg-[#0e1526] relative overflow-hidden flex items-center justify-center transition-colors duration-300" dir="rtl">
       {/* Dark Mode Toggle Button */}
@@ -177,7 +165,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
           <Moon className="w-7 h-7 text-[#0e1b27] group-hover:-rotate-12 transition-transform duration-300" />
         )}
       </button>
-
       {/* Background Pattern */}
       <div className="absolute h-[941.245px] left-[10%] top-[-30px] w-[827.092px] opacity-40">
         <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 828.092 942.245">
@@ -207,29 +194,26 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
           </defs>
         </svg>
       </div>
-
-
       {/* Login Card */}
       <div className="relative z-10 w-full max-w-[450px] mx-4">
         {/* Logo and Title */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-4">
-            <div className="bg-[#0e1b27] dark:bg-white h-[84px] w-[94px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[12px_11px] mask-size-[60px_68.281px] transition-colors duration-300" 
+            <div className="bg-[#0e1b27] dark:bg-white h-[84px] w-[94px] mask-alpha mask-intersect mask-no-clip mask-no-repeat mask-position-[12px_11px] mask-size-[60px_68.281px] transition-colors duration-300"
                  style={{ maskImage: `url('${imgRectangle34624214}')` }} />
           </div>
-          
+         
           <h1 className="text-center mb-2">
             <span className="text-xl text-[#0e1526] dark:text-white">پنل مدیریت داده‌های </span>
             <span className="text-4xl font-bold text-[#0e1b27] dark:text-white">بـیـنـش</span>
           </h1>
-          
+         
           <div className="flex items-center gap-2 text-xs text-[#0e1526] dark:text-[#8ca3b8]">
             <div className="h-[1px] w-[30px] bg-[#0e1b27] dark:bg-white"></div>
             <span>سیستم هوشمند مدیریت کسب و کار</span>
             <div className="h-[1px] w-[30px] bg-[#0e1b27] dark:bg-white"></div>
           </div>
         </div>
-
         {/* Login Form */}
         <div className="bg-white dark:bg-[#1a1f2e] rounded-2xl border border-[#e8e8e8] dark:border-[#2a3142] p-8 shadow-lg transition-colors duration-300">
           {step === "phone" ? (
@@ -242,7 +226,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   لطفا جهت ورود به نرم افزار شماره موبایل خود را وارد نمایید.
                 </p>
               </div>
-
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-[#0e1526] dark:text-white">
                   شماره موبایل
@@ -263,7 +246,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   <p className="text-xs text-[#e92c2c] mt-1">{error}</p>
                 )}
               </div>
-
               <button
                 type="submit"
                 disabled={isLoading || phoneNumber.length !== 11}
@@ -275,7 +257,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   "ارسال کد تایید"
                 )}
               </button>
-
               <p className="text-[10px] text-center text-[#8ca3b8]">
                 ورود شما به معنای پذیرش{" "}
                 <button
@@ -317,7 +298,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   <ArrowRight className="w-4 h-4" />
                   <span>بازگشت</span>
                 </button>
-
                 <div className="text-center space-y-2 mb-6">
                   <div className="flex items-center justify-center mb-4">
                     <div className="w-12 h-12 bg-[#0e1b27]/10 dark:bg-[#0085ff]/10 rounded-full flex items-center justify-center">
@@ -332,7 +312,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   </p>
                 </div>
               </div>
-
               <div className="flex justify-center gap-2" dir="ltr">
                 {otp.map((digit, index) => (
                   <input
@@ -349,13 +328,12 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   />
                 ))}
               </div>
-              
+             
               {error && (
                 <div className="text-center">
                   <p className="text-xs text-[#e92c2c]">{error}</p>
                 </div>
               )}
-
               <button
                 type="submit"
                 disabled={isLoading || otp.join("").length !== 6}
@@ -367,7 +345,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   "تایید و ورود"
                 )}
               </button>
-
               <div className="text-center">
                 {timer > 0 ? (
                   <p className="text-sm text-[#8ca3b8]">
@@ -387,7 +364,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   </button>
                 )}
               </div>
-
               <p className="text-[10px] text-center text-[#8ca3b8]">
                 کد را دریافت نکردید؟{" "}
                 <button
@@ -400,7 +376,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
               </p>
             </form>
           )}
-
           <div className="mt-6 pt-6 border-t border-[#e8e8e8] dark:border-[#2a3142] text-center">
             <button
               type="button"
@@ -412,7 +387,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
           </div>
         </div>
       </div>
-
       {/* Support Modal */}
       {showSupportModal && (
         <>
@@ -421,7 +395,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
             className="fixed inset-0 bg-black/50 z-50"
             onClick={() => setShowSupportModal(false)}
           />
-
           {/* Modal Content */}
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none" dir="rtl">
             <div className="bg-white dark:bg-[#1a1f2e] rounded-2xl border border-[#e8e8e8] dark:border-[#2a3142] w-full max-w-[500px] pointer-events-auto animate-fadeIn shadow-xl">
@@ -442,7 +415,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-
               {/* Content */}
               <div className="p-6 space-y-6">
                 {/* Help Section */}
@@ -450,7 +422,7 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   <h3 className="text-sm font-medium text-[#1c1c1c] dark:text-white">
                     مشکلات متداول
                   </h3>
-                  
+                 
                   <div className="space-y-3">
                     <div className="p-4 bg-[#f7f9fb] dark:bg-[#252b3d] rounded-lg border border-[#e8e8e8] dark:border-[#2a3142]">
                       <p className="text-sm font-medium text-[#1c1c1c] dark:text-white mb-2">
@@ -460,7 +432,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                         لطفاً شماره موبایل خود را بررسی کرده و مطمئن شوید که صحیح وارد شده است. همچنین پیامک‌های هرزنامه خود را نیز بررسی کنید.
                       </p>
                     </div>
-
                     <div className="p-4 bg-[#f7f9fb] dark:bg-[#252b3d] rounded-lg border border-[#e8e8e8] dark:border-[#2a3142]">
                       <p className="text-sm font-medium text-[#1c1c1c] dark:text-white mb-2">
                         کد تایید منقضی شده است
@@ -469,7 +440,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                         از گزینه "ارسال مجدد کد" استفاده کنید تا کد جدیدی برای شما ارسال شود.
                       </p>
                     </div>
-
                     <div className="p-4 bg-[#f7f9fb] dark:bg-[#252b3d] rounded-lg border border-[#e8e8e8] dark:border-[#2a3142]">
                       <p className="text-sm font-medium text-[#1c1c1c] dark:text-white mb-2">
                         حساب کاربری ندارم
@@ -480,13 +450,11 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                     </div>
                   </div>
                 </div>
-
                 {/* Contact Section */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-medium text-[#1c1c1c] dark:text-white">
                     راه‌های ارتباطی
                   </h3>
-
                   <div className="space-y-3">
                     <a
                       href="tel:02188888888"
@@ -502,7 +470,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                         </p>
                       </div>
                     </a>
-
                     <a
                       href="mailto:support@rahgir.com"
                       className="flex items-center gap-3 p-4 bg-[#f7f9fb] dark:bg-[#252b3d] rounded-lg border border-[#e8e8e8] dark:border-[#2a3142] hover:bg-[#eef2f6] dark:hover:bg-[#2a3142] transition-colors"
@@ -517,7 +484,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                         </p>
                       </div>
                     </a>
-
                     <div className="flex items-center gap-3 p-4 bg-[#f7f9fb] dark:bg-[#252b3d] rounded-lg border border-[#e8e8e8] dark:border-[#2a3142]">
                       <MessageSquare className="w-5 h-5 text-[#0085ff]" />
                       <div className="flex-1">
@@ -536,7 +502,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
           </div>
         </>
       )}
-
       {/* Terms & Privacy Modal */}
       {showTermsModal && (
         <>
@@ -545,7 +510,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
             className="fixed inset-0 bg-black/50 z-50"
             onClick={() => setShowTermsModal(false)}
           />
-
           {/* Modal Content */}
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none" dir="rtl">
             <div className="bg-white dark:bg-[#1a1f2e] rounded-2xl border border-[#e8e8e8] dark:border-[#2a3142] w-full max-w-[600px] max-h-[80vh] pointer-events-auto animate-fadeIn shadow-xl flex flex-col">
@@ -561,7 +525,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-
               {/* Tabs */}
               <div className="flex border-b border-[#e8e8e8] dark:border-[#2a3142]">
                 <button
@@ -585,7 +548,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   حریم خصوصی
                 </button>
               </div>
-
               {/* Content */}
               <div className="p-6 overflow-y-auto flex-1">
                 {termsModalTab === "terms" ? (
@@ -593,15 +555,14 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                     <h3 className="font-semibold text-[#1c1c1c] dark:text-white text-base mb-3">
                       شرایط و ضوابط استفاده از سیستم رهگیر
                     </h3>
-                    
+                   
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۱. پذیرش شرایط</p>
                       <p>
-                        با استفاده از سیستم رهگیر، شما تمامی شرایط و ضوابط ذکر شده در این سند را می‌پذیرید. 
+                        با استفاده از سیستم رهگیر، شما تمامی شرایط و ضوابط ذکر شده در این سند را می‌پذیرید.
                         در صورت عدم پذیرش این شرایط، لطفاً از استفاده از سیستم خودداری نمایید.
                       </p>
                     </div>
-
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۲. تعریف کاربر</p>
                       <p>
@@ -609,23 +570,20 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                         مسئولیت حفظ اطلاعات ورود به عهده کاربر می‌باشد.
                       </p>
                     </div>
-
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۳. محدودیت‌های استفاده</p>
                       <p>
-                        کاربر متعهد می‌شود که از سیستم تنها برای اهداف قانونی استفاده کرده و هرگونه سوء استفاده از خدمات 
+                        کاربر متعهد می‌شود که از سیستم تنها برای اهداف قانونی استفاده کرده و هرگونه سوء استفاده از خدمات
                         می‌تواند منجر به لغو دسترسی کاربر گردد.
                       </p>
                     </div>
-
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۴. مالکیت معنوی</p>
                       <p>
-                        تمامی حقوق مالکیت معنوی سیستم رهگیر متعلق به شرکت بینش‌افزار آتی‌نگر می‌باشد و هرگونه کپی‌برداری 
+                        تمامی حقوق مالکیت معنوی سیستم رهگیر متعلق به شرکت بینش‌افزار آتی‌نگر می‌باشد و هرگونه کپی‌برداری
                         یا استفاده غیرمجاز پیگرد قانونی خواهد داشت.
                       </p>
                     </div>
-
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۵. تغییرات در شرایط</p>
                       <p>
@@ -633,11 +591,10 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                         ادامه استفاده از سیستم پس از اعمال تغییرات به معنای پذیرش شرایط جدید می‌باشد.
                       </p>
                     </div>
-
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۶. محدودیت مسئولیت</p>
                       <p>
-                        شرکت بینش‌افزار آتی‌نگر در قبال هرگونه خسارت مستقیم یا غیرمستقیم ناشی از استفاده یا عدم امکان استفاده از سیستم 
+                        شرکت بینش‌افزار آتی‌نگر در قبال هرگونه خسارت مستقیم یا غیرمستقیم ناشی از استفاده یا عدم امکان استفاده از سیستم
                         مسئولیتی نخواهد داشت.
                       </p>
                     </div>
@@ -647,7 +604,7 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                     <h3 className="font-semibold text-[#1c1c1c] dark:text-white text-base mb-3">
                       سیاست حفظ حریم خصوصی
                     </h3>
-                    
+                   
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۱. جمع‌آوری اطلاعات</p>
                       <p>
@@ -655,7 +612,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                         این اطلاعات تنها برای بهبود کیفیت خدمات و ارتباط با شما استفاده خواهد شد.
                       </p>
                     </div>
-
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۲. استفاده از اطلاعات</p>
                       <p>
@@ -668,15 +624,13 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                         <li>پشتیبانی فنی و خدمات مشتریان</li>
                       </ul>
                     </div>
-
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۳. حفاظت از اطلاعات</p>
                       <p>
-                        ما از روش‌های امنیتی پیشرفته برای حفاظت از اطلاعات شما استفاده می‌کنیم. تمامی داده‌ها به صورت رمزنگاری شده 
+                        ما از روش‌های امنیتی پیشرفته برای حفاظت از اطلاعات شما استفاده می‌کنیم. تمامی داده‌ها به صورت رمزنگاری شده
                         ذخیره و منتقل می‌شوند.
                       </p>
                     </div>
-
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۴. اشتراک‌گذاری اطلاعات</p>
                       <p>
@@ -688,15 +642,13 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                         <li>برای حفاظت از حقوق و امنیت م</li>
                       </ul>
                     </div>
-
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۵. کوکی‌ها</p>
                       <p>
-                        ما از کوکی‌ها برای بهبود تجربه کاربری و تحلیل استفاده از سیستم استفاده می‌کنیم. شما می‌توانید استفاده از کوکی‌ها را 
+                        ما از کوکی‌ها برای بهبود تجربه کاربری و تحلیل استفاده از سیستم استفاده می‌کنیم. شما می‌توانید استفاده از کوکی‌ها را
                         در تنظیمات مرورگر خود غیرفعال کنید.
                       </p>
                     </div>
-
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۶. حقوق کاربر</p>
                       <p>
@@ -704,7 +656,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                         برای اعمال این حقوق، لطفاً با پشتیبانی تماس بگیرید.
                       </p>
                     </div>
-
                     <div>
                       <p className="font-medium text-[#1c1c1c] dark:text-white mb-2">۷. تغییرات در سیاست</p>
                       <p>
@@ -714,7 +665,6 @@ export function LoginPage({ setIsLoggedIn }: LoginPageProps) {
                   </div>
                 )}
               </div>
-
               {/* Footer */}
               <div className="p-6 border-t border-[#e8e8e8] dark:border-[#2a3142]">
                 <button
