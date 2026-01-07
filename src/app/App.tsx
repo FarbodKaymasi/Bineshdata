@@ -6,6 +6,7 @@ import { CustomersPage } from "./pages/CustomersPage";
 import { WarehousePage } from "./pages/WarehousePage";
 import { FinancialPage } from "./pages/FinancialPage";
 import { AIPage } from "./pages/AIPage";
+import { TestPage } from "./pages/TestPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { TutorialsPage } from "./pages/TutorialsPage";
 import { SupportPage } from "./pages/SupportPage";
@@ -50,7 +51,7 @@ function MainContent() {
       <main
         className={`flex-1 overflow-y-auto transition-all duration-300 ${
           isOpen ? "md:mr-64 mr-0" : "mr-0"
-        } ${activePage === "ai" ? "pt-[64px]" : "p-6 pt-[88px]"}`}
+        } ${activePage === "ai" || activePage === "testpage" ? "pt-[64px]" : "p-6 pt-[88px]"}`}
         dir="rtl"
         style={{ backgroundColor: colors.background }}
       >
@@ -62,6 +63,7 @@ function MainContent() {
         {activePage === "financial" && <FinancialPage />}
         {activePage === "ai" && <AIPage />}
         {activePage === "exhibition" && <ExhibitionVisits />}
+        {activePage === "testpage" && <TestPage />}
         {activePage === "settings" && <SettingsPage />}
         {activePage === "tutorials" && <TutorialsPage />}
         {activePage === "support" && <SupportPage />}

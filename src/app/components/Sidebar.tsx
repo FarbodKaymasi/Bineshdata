@@ -22,7 +22,7 @@ import { useCurrentColors } from "../contexts/ThemeColorsContext";
 import { useEffect, useState } from "react";
 
 interface SidebarItem {
-  id: "dashboard" | "sales" | "products" | "customers" | "warehouse" | "financial" | "ai" | "exhibition" | "settings";
+  id: "dashboard" | "sales" | "products" | "customers" | "warehouse" | "financial" | "ai" | "testpage" | "exhibition" | "settings";
   label: string;
   icon: any;
   badge?: number;
@@ -37,6 +37,7 @@ const menuItems: SidebarItem[] = [
   { id: "warehouse", label: "انبار", icon: Warehouse },
   { id: "financial", label: "مالی", icon: DollarSign },
   { id: "ai", label: "هوش‌مصنوعی", icon: Bot },
+  { id: "testpage", label: "تست چارت‌ها", icon: Database },
 ];
 
 const footerItems = [

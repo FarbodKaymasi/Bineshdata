@@ -8,6 +8,7 @@ export type PageType =
   | "warehouse"
   | "financial"
   | "ai"
+  | "testpage"
   | "exhibition"
   | "settings"
   | "tutorials"
@@ -40,6 +41,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       '/warehouse': 'warehouse',
       '/financial': 'financial',
       '/ai': 'ai',
+      '/testpage': 'testpage',
       '/exhibition': 'exhibition',
       '/tutorials': 'tutorials',
       '/support': 'support',

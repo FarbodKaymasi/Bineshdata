@@ -67,6 +67,10 @@ export function AIPage() {
   useEffect(() => {
     const connectWebSocket = () => {
       try {
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+        
         setIsConnecting(true);
         setConnectionError(null);
         
@@ -87,6 +91,15 @@ export function AIPage() {
               
               // If payload is empty, streaming is complete
               if (payload === "") {
+                if (streamingMessageIdRef.current !== null) {
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === streamingMessageIdRef.current
+                        ? { ...msg, isStreaming: false }
+                        : msg
+                    )
+                  );
+                }
                 streamingMessageIdRef.current = null;
                 return;
               }
@@ -198,15 +211,16 @@ export function AIPage() {
     const messageText = inputValue;
     setInputValue("");
 
-    // Send message to WebSocket in the correct format
+
+    const history = messages.map(msg => ({
+      Role: msg.sender === "user" ? "user" : "assistant",
+      Content: msg.text
+    }));
+    const fullMessages = [...history, { Role: "user", Content: messageText }];
+
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       const payload = {
-        messages: [
-          {
-            role: "user",
-            content: messageText
-          }
-        ]
+        Messages: fullMessages
       };
       wsRef.current.send(JSON.stringify(payload));
     }
