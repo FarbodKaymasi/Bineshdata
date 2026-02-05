@@ -1,10 +1,25 @@
 import { useState, useMemo } from "react";
-import { Users, TrendingUp, Award, UserPlus, Search, X, Tag, Edit, Trash2, RotateCcw, CheckCircle2 } from "lucide-react";
+import {
+  Users,
+  TrendingUp,
+  Award,
+  UserPlus,
+  Search,
+  X,
+  Tag,
+  Edit,
+  Trash2,
+  RotateCcw,
+  CheckCircle2,
+} from "lucide-react";
 import { CustomersTableWithFilters } from "../components/CustomersTableWithFilters";
 import { ReportDownload, ReportSection } from "../components/ReportDownload";
 import { useAppSelector } from "../store/hooks";
 import { ColumnConfig } from "../components/ColumnCustomizer";
-import { CategorySettingsModal, Category } from "../components/CategorySettingsModal";
+import {
+  CategorySettingsModal,
+  Category,
+} from "../components/CategorySettingsModal";
 import { useCurrentColors } from "../contexts/ThemeColorsContext";
 import { ThemedButton } from "../components/ThemedButton";
 
@@ -23,29 +38,175 @@ interface Customer {
 
 // تولید داده‌های تصادفی برای مشتریان
 const generateCustomers = (): Customer[] => {
-  const firstNames = ["علی", "سارا", "محمد", "فاطمه", "حسین", "زهرا", "رضا", "مریم", "احمد", "نرگس", "مهدی", "الهام", "امیر", "نازنین", "حامد", "سمیرا", "کامران", "لیلا", "بهزاد", "شیرین", "مسعود", "پریسا", "جو��د", "مینا", "فرهاد", "سمانه", "سعید", "نیلوفر", "داود", "مهسا"];
-  const lastNames = ["محمدی", "احمدی", "رضایی", "کریمی", "قاسمی", "حسینی", "نوری", "موسوی", "صادقی", "اکبری", "جعفری", "میرزایی", "علیپور", "خانی", "زارعی", "ملکی", "باقری", "یوسفی", "فتحی", "عباسی", "طاهری", "رحیمی", "کاظمی", "حیدری", "اسدی", "فروغی", "نصیری", "شریفی", "امینی", "رستمی"];
-  
+  const firstNames = [
+    "علی",
+    "سارا",
+    "محمد",
+    "فاطمه",
+    "حسین",
+    "زهرا",
+    "رضا",
+    "مریم",
+    "احمد",
+    "نرگس",
+    "مهدی",
+    "الهام",
+    "امیر",
+    "نازنین",
+    "حامد",
+    "سمیرا",
+    "کامران",
+    "لیلا",
+    "بهزاد",
+    "شیرین",
+    "مسعود",
+    "پریسا",
+    "جو��د",
+    "مینا",
+    "فرهاد",
+    "سمانه",
+    "سعید",
+    "نیلوفر",
+    "داود",
+    "مهسا",
+  ];
+  const lastNames = [
+    "محمدی",
+    "احمدی",
+    "رضایی",
+    "کریمی",
+    "قاسمی",
+    "حسینی",
+    "نوری",
+    "موسوی",
+    "صادقی",
+    "اکبری",
+    "جعفری",
+    "میرزایی",
+    "علیپور",
+    "خانی",
+    "زارعی",
+    "ملکی",
+    "باقری",
+    "یوسفی",
+    "فتحی",
+    "عباسی",
+    "طاهری",
+    "رحیمی",
+    "کاظمی",
+    "حیدری",
+    "اسدی",
+    "فروغی",
+    "نصیری",
+    "شریفی",
+    "امینی",
+    "رستمی",
+  ];
+
   // English equivalents for email
-  const emailFirstNames = ["ali", "sara", "mohammad", "fatemeh", "hossein", "zahra", "reza", "maryam", "ahmad", "narges", "mahdi", "elham", "amir", "nazanin", "hamed", "samira", "kamran", "leila", "behzad", "shirin", "masoud", "parisa", "javad", "mina", "farhad", "samaneh", "saeed", "niloofar", "davood", "mahsa"];
-  const emailLastNames = ["mohammadi", "ahmadi", "rezaei", "karimi", "ghasemi", "hosseini", "noori", "mousavi", "sadeghi", "akbari", "jafari", "mirzaei", "alipour", "khani", "zarei", "maleki", "bagheri", "yousefi", "fathi", "abbasi", "taheri", "rahimi", "kazemi", "heidari", "asadi", "foroughi", "nasiri", "sharifi", "amini", "rostami"];
-  
+  const emailFirstNames = [
+    "ali",
+    "sara",
+    "mohammad",
+    "fatemeh",
+    "hossein",
+    "zahra",
+    "reza",
+    "maryam",
+    "ahmad",
+    "narges",
+    "mahdi",
+    "elham",
+    "amir",
+    "nazanin",
+    "hamed",
+    "samira",
+    "kamran",
+    "leila",
+    "behzad",
+    "shirin",
+    "masoud",
+    "parisa",
+    "javad",
+    "mina",
+    "farhad",
+    "samaneh",
+    "saeed",
+    "niloofar",
+    "davood",
+    "mahsa",
+  ];
+  const emailLastNames = [
+    "mohammadi",
+    "ahmadi",
+    "rezaei",
+    "karimi",
+    "ghasemi",
+    "hosseini",
+    "noori",
+    "mousavi",
+    "sadeghi",
+    "akbari",
+    "jafari",
+    "mirzaei",
+    "alipour",
+    "khani",
+    "zarei",
+    "maleki",
+    "bagheri",
+    "yousefi",
+    "fathi",
+    "abbasi",
+    "taheri",
+    "rahimi",
+    "kazemi",
+    "heidari",
+    "asadi",
+    "foroughi",
+    "nasiri",
+    "sharifi",
+    "amini",
+    "rostami",
+  ];
+
   // اطلاعات جغرافیایی
-  const provinces = ["تهران", "اصفهان", "خراسان رضوی", "فارس", "خوزستان", "آذربایجان شرقی", "مازندران", "گیلان"];
+  const provinces = [
+    "تهران",
+    "اصفهان",
+    "خراسان رضوی",
+    "فارس",
+    "خوزستان",
+    "آذربایجان شرقی",
+    "مازندران",
+    "گیلان",
+  ];
   const citiesByProvince: Record<string, string[]> = {
-    "تهران": ["تهران", "کرج", "ورامین", "شهریار", "اسلامشهر"],
-    "اصفهان": ["اصفهان", "کاشان", "نجف‌آباد", "خمینی‌شهر", "شاهین‌شهر"],
+    تهران: ["تهران", "کرج", "ورامین", "شهریار", "اسلامشهر"],
+    اصفهان: ["اصفهان", "کاشان", "نجف‌آباد", "خمینی‌شهر", "شاهین‌شهر"],
     "خراسان رضوی": ["مشهد", "نیشابور", "سبزوار", "کاشمر", "تربت حیدریه"],
-    "فارس": ["شیراز", "مرودشت", "جهرم", "فسا", "کازرون"],
-    "خوزستان": ["اهواز", "آبادان", "دزفول", "خرمشهر", "بهبهان"],
+    فارس: ["شیراز", "مرودشت", "جهرم", "فسا", "کازرون"],
+    خوزستان: ["اهواز", "آبادان", "دزفول", "خرمشهر", "بهبهان"],
     "آذربایجان شرقی": ["تبریز", "مراغه", "مرند", "میانه", "بناب"],
-    "مازندران": ["ساری", "بابل", "آمل", "قائم‌شهر", "نوشهر"],
-    "گیلان": ["رشت", "بندر انزلی", "لاهیجان", "لنگرود", "آستارا"],
+    مازندران: ["ساری", "بابل", "آمل", "قائم‌شهر", "نوشهر"],
+    گیلان: ["رشت", "بندر انزلی", "لاهیجان", "لنگرود", "آستارا"],
   };
-  const neighborhoods = ["میدان آزادی", "خیابان ولیعصر", "میدان انقلاب", "خیابان آزادی", "میدان فردوسی", "خیابان شریعتی", "پارک ملت", "خیابان سعادت‌آباد", "میدان ونک", "خیابان نواب", "خیابان انقلاب", "میدان تجریش"];
-  
+  const neighborhoods = [
+    "میدان آزادی",
+    "خیابان ولیعصر",
+    "میدان انقلاب",
+    "خیابان آزادی",
+    "میدان فردوسی",
+    "خیابان شریعتی",
+    "پارک ملت",
+    "خیابان سعادت‌آباد",
+    "میدان ونک",
+    "خیابان نواب",
+    "خیابان انقلاب",
+    "میدان تجریش",
+  ];
+
   const customers: Customer[] = [];
-  
+
   for (let i = 1; i <= 120; i++) {
     const firstNameIndex = Math.floor(Math.random() * firstNames.length);
     const lastNameIndex = Math.floor(Math.random() * lastNames.length);
@@ -54,17 +215,31 @@ const generateCustomers = (): Customer[] => {
     const emailFirstName = emailFirstNames[firstNameIndex];
     const emailLastName = emailLastNames[lastNameIndex];
     const totalCalls = Math.floor(Math.random() * 100) + 1;
-    const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
-    const month = String(Math.floor(Math.random() * 3) + 8).padStart(2, '0');
+    const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, "0");
+    const month = String(Math.floor(Math.random() * 3) + 8).padStart(2, "0");
     const satisfaction = (Math.random() * 2 + 3).toFixed(1); // بین 3 تا 5
-    const phonePrefix = ["0912", "0913", "0914", "0915", "0916", "0917", "0918", "0919", "0921", "0922"][Math.floor(Math.random() * 10)];
-    const phoneNumber = phonePrefix + String(Math.floor(Math.random() * 10000000)).padStart(7, '0');
-    
+    const phonePrefix = [
+      "0912",
+      "0913",
+      "0914",
+      "0915",
+      "0916",
+      "0917",
+      "0918",
+      "0919",
+      "0921",
+      "0922",
+    ][Math.floor(Math.random() * 10)];
+    const phoneNumber =
+      phonePrefix +
+      String(Math.floor(Math.random() * 10000000)).padStart(7, "0");
+
     const province = provinces[Math.floor(Math.random() * provinces.length)];
     const cities = citiesByProvince[province];
     const city = cities[Math.floor(Math.random() * cities.length)];
-    const neighborhood = neighborhoods[Math.floor(Math.random() * neighborhoods.length)];
-    
+    const neighborhood =
+      neighborhoods[Math.floor(Math.random() * neighborhoods.length)];
+
     customers.push({
       id: String(i),
       name: `${firstName} ${lastName}`,
@@ -78,7 +253,7 @@ const generateCustomers = (): Customer[] => {
       neighborhood: neighborhood,
     });
   }
-  
+
   return customers;
 };
 
@@ -88,7 +263,9 @@ export function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
+  const [editingCustomerId, setEditingCustomerId] = useState<string | null>(
+    null,
+  );
   const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([
@@ -136,9 +313,13 @@ export function CustomersPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [deletedCustomers, setDeletedCustomers] = useState<Customer[]>([]);
-  const [isDeletedCustomersModalOpen, setIsDeletedCustomersModalOpen] = useState(false);
-  const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [isDeletedCustomersModalOpen, setIsDeletedCustomersModalOpen] =
+    useState(false);
+  const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] =
+    useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(
+    null,
+  );
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   // Get active filters from Redux store
@@ -152,7 +333,7 @@ export function CustomersPage() {
       col.isCustom &&
       (col.label.toLowerCase().includes("تگ") ||
         col.label.toLowerCase().includes("برچسب") ||
-        col.label.toLowerCase().includes("tag"))
+        col.label.toLowerCase().includes("tag")),
   );
 
   const handleAddTag = () => {
@@ -178,7 +359,7 @@ export function CustomersPage() {
     (customer) =>
       customer.name.includes(searchQuery) ||
       customer.phone.includes(searchQuery) ||
-      customer.email.includes(searchQuery)
+      customer.email.includes(searchQuery),
   );
 
   // Apply Redux filters
@@ -217,7 +398,7 @@ export function CustomersPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isEditMode) {
       // ویرایش مشتری موجود
       handleSaveEdit(e);
@@ -225,9 +406,9 @@ export function CustomersPage() {
       // افزودن مشتری جدید
       const today = new Date();
       const year = 1403;
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+
       const newCustomer: Customer = {
         id: String(Date.now()), // استفاده از timestamp برای ID یکتا
         name: `${formData.firstName} ${formData.lastName}`,
@@ -240,12 +421,12 @@ export function CustomersPage() {
         city: formData.city,
         neighborhood: formData.neighborhood,
       };
-      
+
       setCustomers([newCustomer, ...customers]); // اضافه کردن به ابتدای لیست
-      
+
       console.log("New customer added:", newCustomer);
       setIsModalOpen(false);
-      
+
       // ریست کردن فرم
       setFormData({
         firstName: "",
@@ -341,27 +522,33 @@ export function CustomersPage() {
   };
 
   // Prepare report sections with dynamic columns
-  const visibleCustomColumns = customColumns.filter(col => col.visible);
-  
+  const visibleCustomColumns = customColumns.filter((col) => col.visible);
+
   // Filter out 'history' column from report (it's just an action button, not data)
-  const reportCustomColumns = visibleCustomColumns.filter(col => col.key !== 'history');
-  
+  const reportCustomColumns = visibleCustomColumns.filter(
+    (col) => col.key !== "history",
+  );
+
   const reportSections: ReportSection[] = [
     {
       title: "آمار کلی مشتریان",
       data: [
-        { "شاخص": "کل مشتریان", "مقدار": filteredCustomers.length, "تغییرات": "+12%" },
-        { "شاخص": "مشتریان فعال", "مقدار": 1923, "تغییرات": "+8%" },
-        { "شاخص": "میانگین رضایت", "مقدار": "4.2", "تغییرات": "+0.3" },
-        { "شاخص": "مشتریان جدید", "مقدار": 89, "تغییرات": "-3%" },
+        {
+          شاخص: "کل مشتریان",
+          مقدار: filteredCustomers.length,
+          تغییرات: "+12%",
+        },
+        { شاخص: "مشتریان فعال", مقدار: 1923, تغییرات: "+8%" },
+        { شاخص: "میانگین رضایت", مقدار: "4.2", تغییرات: "+0.3" },
+        { شاخص: "مشتریان جدید", مقدار: 89, تغییرات: "-3%" },
       ],
-      headers: ["شاخص", "مقدار", "تغییرات"]
+      headers: ["شاخص", "مقدار", "تغییرات"],
     },
     {
       title: "لیست مشتریان",
-      data: filteredCustomers.map(c => {
+      data: filteredCustomers.map((c) => {
         const row: Record<string, any> = {};
-        reportCustomColumns.forEach(col => {
+        reportCustomColumns.forEach((col) => {
           const label = col.customLabel || col.label;
           switch (col.key) {
             case "name":
@@ -401,8 +588,8 @@ export function CustomersPage() {
         });
         return row;
       }),
-      headers: reportCustomColumns.map(col => col.customLabel || col.label)
-    }
+      headers: reportCustomColumns.map((col) => col.customLabel || col.label),
+    },
   ];
 
   const colors = useCurrentColors();
@@ -442,83 +629,122 @@ export function CustomersPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div 
+        <div
           className="rounded-lg p-4 border transition-all duration-300"
           style={{
             backgroundColor: colors.cardBackground,
-            borderColor: colors.border
+            borderColor: colors.border,
           }}
         >
           <div className="flex items-center justify-between mb-2">
             <Users className="w-5 h-5" style={{ color: colors.primary }} />
-            <span className="text-xs" style={{ color: colors.textSecondary }}>کل مشتریان</span>
+            <span className="text-xs" style={{ color: colors.textSecondary }}>
+              کل مشتریان
+            </span>
           </div>
-          <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>2,547</p>
-          <p className="text-xs mt-1" style={{ color: colors.success }}>+12% نسبت به ماه قبل</p>
+          <p
+            className="text-2xl font-bold"
+            style={{ color: colors.textPrimary }}
+          >
+            2,547
+          </p>
+          <p className="text-xs mt-1" style={{ color: colors.success }}>
+            +12% نسبت به ماه قبل
+          </p>
         </div>
 
-        <div 
+        <div
           className="rounded-lg p-4 border transition-all duration-300"
           style={{
             backgroundColor: colors.cardBackground,
-            borderColor: colors.border
+            borderColor: colors.border,
           }}
         >
           <div className="flex items-center justify-between mb-2">
             <TrendingUp className="w-5 h-5" style={{ color: colors.success }} />
-            <span className="text-xs" style={{ color: colors.textSecondary }}>مشتریان فعال</span>
+            <span className="text-xs" style={{ color: colors.textSecondary }}>
+              مشتریان فعال
+            </span>
           </div>
-          <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>1,923</p>
-          <p className="text-xs mt-1" style={{ color: colors.success }}>+8% نسبت به ماه قبل</p>
+          <p
+            className="text-2xl font-bold"
+            style={{ color: colors.textPrimary }}
+          >
+            1,923
+          </p>
+          <p className="text-xs mt-1" style={{ color: colors.success }}>
+            +8% نسبت به ماه قبل
+          </p>
         </div>
 
-        <div 
+        <div
           className="rounded-lg p-4 border transition-all duration-300"
           style={{
             backgroundColor: colors.cardBackground,
-            borderColor: colors.border
+            borderColor: colors.border,
           }}
         >
           <div className="flex items-center justify-between mb-2">
             <Award className="w-5 h-5 text-[#ffd700]" />
-            <span className="text-xs" style={{ color: colors.textSecondary }}>میانگین رضایت</span>
+            <span className="text-xs" style={{ color: colors.textSecondary }}>
+              میانگین رضایت
+            </span>
           </div>
-          <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>4.2</p>
-          <p className="text-xs mt-1" style={{ color: colors.success }}>+0.3 نسبت به ماه قبل</p>
+          <p
+            className="text-2xl font-bold"
+            style={{ color: colors.textPrimary }}
+          >
+            4.2
+          </p>
+          <p className="text-xs mt-1" style={{ color: colors.success }}>
+            +0.3 نسبت به ماه قبل
+          </p>
         </div>
 
-        <div 
+        <div
           className="rounded-lg p-4 border transition-all duration-300"
           style={{
             backgroundColor: colors.cardBackground,
-            borderColor: colors.border
+            borderColor: colors.border,
           }}
         >
           <div className="flex items-center justify-between mb-2">
             <UserPlus className="w-5 h-5 text-[#9c27b0]" />
-            <span className="text-xs" style={{ color: colors.textSecondary }}>مشتریان جدید</span>
+            <span className="text-xs" style={{ color: colors.textSecondary }}>
+              مشتریان جدید
+            </span>
           </div>
-          <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>89</p>
-          <p className="text-xs mt-1" style={{ color: colors.error }}>-3% نسبت به ماه قبل</p>
+          <p
+            className="text-2xl font-bold"
+            style={{ color: colors.textPrimary }}
+          >
+            89
+          </p>
+          <p className="text-xs mt-1" style={{ color: colors.error }}>
+            -3% نسبت به ماه قبل
+          </p>
         </div>
       </div>
 
       {/* Search Bar */}
-      <div 
+      <div
         className="rounded-lg p-4 border"
         style={{
           backgroundColor: colors.cardBackground,
-          borderColor: colors.border
+          borderColor: colors.border,
         }}
       >
-        <div 
+        <div
           className="flex items-center gap-3 rounded-lg px-4 py-2.5 sm:py-3 border"
           style={{
             backgroundColor: colors.backgroundSecondary,
-            borderColor: colors.border
+            borderColor: colors.border,
           }}
         >
-          <Search className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" style={{ color: colors.textSecondary }} />
+          <Search
+            className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
+            style={{ color: colors.textSecondary }}
+          />
           <input
             type="text"
             placeholder="جستجو در مشتریان (نام، شماره تلفن، ایمیل)"
@@ -548,7 +774,13 @@ export function CustomersPage() {
       </div>
 
       {/* Customers Table */}
-      <CustomersTableWithFilters customers={filteredCustomers} customColumns={customColumns} setCustomColumns={setCustomColumns} handleEdit={handleEdit} handleDelete={handleDelete} />
+      <CustomersTableWithFilters
+        customers={filteredCustomers}
+        customColumns={customColumns}
+        setCustomColumns={setCustomColumns}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+      />
 
       {/* Category Settings Modal */}
       <CategorySettingsModal
@@ -571,7 +803,10 @@ export function CustomersPage() {
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none" dir="rtl">
+          <div
+            className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none"
+            dir="rtl"
+          >
             <div className="bg-white dark:bg-[#1a1f2e] rounded-lg p-6 w-full max-w-[500px] border border-[#e8e8e8] dark:border-[#2a3142] pointer-events-auto animate-fadeIn max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-[#1c1c1c] dark:text-white">
@@ -599,7 +834,10 @@ export function CustomersPage() {
                 </button>
               </div>
 
-              <form onSubmit={isEditMode ? handleSaveEdit : handleSubmit} className="space-y-4">
+              <form
+                onSubmit={isEditMode ? handleSaveEdit : handleSubmit}
+                className="space-y-4"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-[#1c1c1c] dark:text-white mb-2">
@@ -610,7 +848,9 @@ export function CustomersPage() {
                       placeholder="نام را وارد کنید"
                       className="w-full bg-[#f7f9fb] dark:bg-[#2a3142] border border-[#e8e8e8] dark:border-[#2a3142] rounded-lg px-4 py-2 text-sm text-[#1c1c1c] dark:text-white placeholder:text-[#969696] dark:placeholder:text-[#8b92a8] outline-none focus:border-[#0085ff]"
                       value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, firstName: e.target.value })
+                      }
                       required
                       dir="rtl"
                     />
@@ -625,7 +865,9 @@ export function CustomersPage() {
                       placeholder="نام خانوادگی را وارد کنید"
                       className="w-full bg-[#f7f9fb] dark:bg-[#2a3142] border border-[#e8e8e8] dark:border-[#2a3142] rounded-lg px-4 py-2 text-sm text-[#1c1c1c] dark:text-white placeholder:text-[#969696] dark:placeholder:text-[#8b92a8] outline-none focus:border-[#0085ff]"
                       value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, lastName: e.target.value })
+                      }
                       required
                       dir="rtl"
                     />
@@ -641,7 +883,9 @@ export function CustomersPage() {
                     placeholder="09123456789"
                     className="w-full bg-[#f7f9fb] dark:bg-[#2a3142] border border-[#e8e8e8] dark:border-[#2a3142] rounded-lg px-4 py-2 text-sm text-[#1c1c1c] dark:text-white placeholder:text-[#969696] dark:placeholder:text-[#8b92a8] outline-none focus:border-[#0085ff]"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
                     required
                     dir="ltr"
                   />
@@ -656,7 +900,9 @@ export function CustomersPage() {
                     placeholder="example@company.com"
                     className="w-full bg-[#f7f9fb] dark:bg-[#2a3142] border border-[#e8e8e8] dark:border-[#2a3142] rounded-lg px-4 py-2 text-sm text-[#1c1c1c] dark:text-white placeholder:text-[#969696] dark:placeholder:text-[#8b92a8] outline-none focus:border-[#0085ff]"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     required
                     dir="ltr"
                   />
@@ -671,7 +917,9 @@ export function CustomersPage() {
                     placeholder="نام شرکت"
                     className="w-full bg-[#f7f9fb] dark:bg-[#2a3142] border border-[#e8e8e8] dark:border-[#2a3142] rounded-lg px-4 py-2 text-sm text-[#1c1c1c] dark:text-white placeholder:text-[#969696] dark:placeholder:text-[#8b92a8] outline-none focus:border-[#0085ff]"
                     value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, company: e.target.value })
+                    }
                     dir="rtl"
                   />
                 </div>
@@ -686,7 +934,9 @@ export function CustomersPage() {
                       placeholder="تهران"
                       className="w-full bg-[#f7f9fb] dark:bg-[#2a3142] border border-[#e8e8e8] dark:border-[#2a3142] rounded-lg px-4 py-2 text-sm text-[#1c1c1c] dark:text-white placeholder:text-[#969696] dark:placeholder:text-[#8b92a8] outline-none focus:border-[#0085ff]"
                       value={formData.province}
-                      onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, province: e.target.value })
+                      }
                       dir="rtl"
                     />
                   </div>
@@ -700,7 +950,9 @@ export function CustomersPage() {
                       placeholder="تهران"
                       className="w-full bg-[#f7f9fb] dark:bg-[#2a3142] border border-[#e8e8e8] dark:border-[#2a3142] rounded-lg px-4 py-2 text-sm text-[#1c1c1c] dark:text-white placeholder:text-[#969696] dark:placeholder:text-[#8b92a8] outline-none focus:border-[#0085ff]"
                       value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, city: e.target.value })
+                      }
                       dir="rtl"
                     />
                   </div>
@@ -714,7 +966,12 @@ export function CustomersPage() {
                       placeholder="ونک"
                       className="w-full bg-[#f7f9fb] dark:bg-[#2a3142] border border-[#e8e8e8] dark:border-[#2a3142] rounded-lg px-4 py-2 text-sm text-[#1c1c1c] dark:text-white placeholder:text-[#969696] dark:placeholder:text-[#8b92a8] outline-none focus:border-[#0085ff]"
                       value={formData.neighborhood}
-                      onChange={(e) => setFormData({ ...formData, neighborhood: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          neighborhood: e.target.value,
+                        })
+                      }
                       dir="rtl"
                     />
                   </div>
@@ -800,8 +1057,10 @@ export function CustomersPage() {
                       </>
                     ) : (
                       <>
-                        <UserPlus className="w-5 h-5" />
-                        <span>افزودن مشتری</span>
+                        <div className="flex items-center gap-2">
+                          <UserPlus className="w-5 h-5" />
+                          <span>افزودن مشتری</span>
+                        </div>
                       </>
                     )}
                   </ThemedButton>
@@ -822,7 +1081,10 @@ export function CustomersPage() {
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none" dir="rtl">
+          <div
+            className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none"
+            dir="rtl"
+          >
             <div className="bg-white dark:bg-[#1a1f2e] rounded-lg p-6 w-full max-w-[500px] border border-[#e8e8e8] dark:border-[#2a3142] pointer-events-auto animate-fadeIn max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-[#1c1c1c] dark:text-white">
@@ -841,8 +1103,14 @@ export function CustomersPage() {
               <div className="space-y-3">
                 {deletedCustomers.length === 0 ? (
                   <div className="text-center py-8">
-                    <Trash2 className="w-12 h-12 mx-auto mb-3 opacity-30" style={{ color: colors.textSecondary }} />
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    <Trash2
+                      className="w-12 h-12 mx-auto mb-3 opacity-30"
+                      style={{ color: colors.textSecondary }}
+                    />
+                    <p
+                      className="text-sm"
+                      style={{ color: colors.textSecondary }}
+                    >
                       هیچ مشتری حذف شده‌ای وجود ندارد
                     </p>
                   </div>
@@ -858,14 +1126,29 @@ export function CustomersPage() {
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex-1">
-                          <h3 className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                          <h3
+                            className="font-semibold mb-1"
+                            style={{ color: colors.textPrimary }}
+                          >
                             {customer.name}
                           </h3>
-                          <div className="space-y-1 text-xs" style={{ color: colors.textSecondary }}>
-                            <p dir="ltr" className="text-right">📞 {customer.phone}</p>
-                            <p dir="ltr" className="text-right">✉️ {customer.email}</p>
+                          <div
+                            className="space-y-1 text-xs"
+                            style={{ color: colors.textSecondary }}
+                          >
+                            <p dir="ltr" className="text-right">
+                              📞 {customer.phone}
+                            </p>
+                            <p dir="ltr" className="text-right">
+                              ✉️ {customer.email}
+                            </p>
                             {customer.province && customer.city && (
-                              <p>📍 {customer.province}، {customer.city}{customer.neighborhood ? `، ${customer.neighborhood}` : ''}</p>
+                              <p>
+                                📍 {customer.province}، {customer.city}
+                                {customer.neighborhood
+                                  ? `، ${customer.neighborhood}`
+                                  : ""}
+                              </p>
                             )}
                             <p>🔢 تعداد تماس‌ها: {customer.totalCalls}</p>
                             <p>⭐ رضایت: {customer.satisfaction.toFixed(1)}</p>
@@ -876,7 +1159,11 @@ export function CustomersPage() {
                           variant="success"
                           onClick={() => {
                             setCustomers([...customers, customer]);
-                            setDeletedCustomers(deletedCustomers.filter((c) => c.id !== customer.id));
+                            setDeletedCustomers(
+                              deletedCustomers.filter(
+                                (c) => c.id !== customer.id,
+                              ),
+                            );
                           }}
                           icon={<RotateCcw className="w-4 h-4" />}
                         >
@@ -902,8 +1189,11 @@ export function CustomersPage() {
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none" dir="rtl">
-            <div 
+          <div
+            className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none"
+            dir="rtl"
+          >
+            <div
               className="rounded-lg p-6 w-full max-w-[450px] border pointer-events-auto animate-fadeIn shadow-xl"
               style={{
                 backgroundColor: colors.cardBackground,
@@ -912,17 +1202,23 @@ export function CustomersPage() {
             >
               {/* Header */}
               <div className="flex items-center gap-3 mb-4">
-                <div 
+                <div
                   className="p-3 rounded-full"
-                  style={{ backgroundColor: colors.error + '20' }}
+                  style={{ backgroundColor: colors.error + "20" }}
                 >
                   <Trash2 className="w-6 h-6" style={{ color: colors.error }} />
                 </div>
                 <div className="flex-1">
-                  <h2 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
+                  <h2
+                    className="font-bold text-lg"
+                    style={{ color: colors.textPrimary }}
+                  >
                     تایید حذف مشتری
                   </h2>
-                  <p className="text-xs mt-0.5" style={{ color: colors.textSecondary }}>
+                  <p
+                    className="text-xs mt-0.5"
+                    style={{ color: colors.textSecondary }}
+                  >
                     این عملیات قابل بازگشت است
                   </p>
                 </div>
@@ -949,10 +1245,16 @@ export function CustomersPage() {
                   borderColor: colors.border,
                 }}
               >
-                <h3 className="font-semibold mb-3 text-base" style={{ color: colors.textPrimary }}>
+                <h3
+                  className="font-semibold mb-3 text-base"
+                  style={{ color: colors.textPrimary }}
+                >
                   {customerToDelete.name}
                 </h3>
-                <div className="grid grid-cols-2 gap-3 text-xs" style={{ color: colors.textSecondary }}>
+                <div
+                  className="grid grid-cols-2 gap-3 text-xs"
+                  style={{ color: colors.textSecondary }}
+                >
                   <div className="flex items-center gap-2">
                     <span className="opacity-60">📞</span>
                     <span dir="ltr">{customerToDelete.phone}</span>
@@ -963,7 +1265,9 @@ export function CustomersPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="opacity-60">⭐</span>
-                    <span>رضایت: {customerToDelete.satisfaction.toFixed(1)}</span>
+                    <span>
+                      رضایت: {customerToDelete.satisfaction.toFixed(1)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="opacity-60">📅</span>
@@ -974,13 +1278,17 @@ export function CustomersPage() {
                       <span className="opacity-60">📍</span>
                       <span>
                         {customerToDelete.province}، {customerToDelete.city}
-                        {customerToDelete.neighborhood ? `، ${customerToDelete.neighborhood}` : ''}
+                        {customerToDelete.neighborhood
+                          ? `، ${customerToDelete.neighborhood}`
+                          : ""}
                       </span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 col-span-2">
                     <span className="opacity-60">✉️</span>
-                    <span dir="ltr" className="text-right">{customerToDelete.email}</span>
+                    <span dir="ltr" className="text-right">
+                      {customerToDelete.email}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -989,12 +1297,14 @@ export function CustomersPage() {
               <div
                 className="rounded-lg p-3 mb-5 border"
                 style={{
-                  backgroundColor: colors.error + '10',
-                  borderColor: colors.error + '30',
+                  backgroundColor: colors.error + "10",
+                  borderColor: colors.error + "30",
                 }}
               >
                 <p className="text-sm" style={{ color: colors.textPrimary }}>
-                  <span className="font-semibold">توجه:</span> با حذف این مشتری، اطلاعات آن از لیست اصلی حذف می‌شود اما می‌توانید از بخش "حذف شده‌ها" آن را بازگردانی کنید.
+                  <span className="font-semibold">توجه:</span> با حذف این مشتری،
+                  اطلاعات آن از لیست اصلی حذف می‌شود اما می‌توانید از بخش "حذف
+                  شده‌ها" آن را بازگردانی کنید.
                 </p>
               </div>
 
@@ -1011,7 +1321,8 @@ export function CustomersPage() {
                     e.currentTarget.style.backgroundColor = colors.border;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = colors.backgroundSecondary;
+                    e.currentTarget.style.backgroundColor =
+                      colors.backgroundSecondary;
                   }}
                 >
                   انصراف
@@ -1038,7 +1349,9 @@ export function CustomersPage() {
         >
           <div className="flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-            <p className="text-sm">مشتری با موفقیت حذف شد و به بخش "حذف شده‌ها" منتقل شد.</p>
+            <p className="text-sm">
+              مشتری با موفقیت حذف شد و به بخش "حذف شده‌ها" منتقل شد.
+            </p>
           </div>
         </div>
       )}

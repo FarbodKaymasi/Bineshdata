@@ -673,19 +673,10 @@ export function Navbar() {
                 <div className="absolute top-full right-0 mt-2 w-[180px] bg-white dark:bg-[#1a1f2e] rounded-lg border border-[#e8e8e8] dark:border-[#2a3142] shadow-xl overflow-hidden z-50 animate-fadeIn" dir="rtl">
                   <div className="py-1">
                     <button className="w-full px-4 py-2.5 text-right text-sm bg-[#f7f9fb] dark:bg-[#252b3d] text-[#0085ff] cursor-default">
-                      بینش
+                       پنل هوشمند مدیریت داده بینش
                     </button>
                     <button className="w-full px-4 py-2.5 text-right text-sm text-[#1c1c1c] dark:text-white hover:bg-[#f7f9fb] dark:hover:bg-[#252b3d] transition-colors">
-                      رهگیر
-                    </button>
-                    <button className="w-full px-4 py-2.5 text-right text-sm text-[#1c1c1c] dark:text-white hover:bg-[#f7f9fb] dark:hover:bg-[#252b3d] transition-colors">
-                      سامان
-                    </button>
-                    <button className="w-full px-4 py-2.5 text-right text-sm text-[#1c1c1c] dark:text-white hover:bg-[#f7f9fb] dark:hover:bg-[#252b3d] transition-colors">
-                      هیار
-                    </button>
-                    <button className="w-full px-4 py-2.5 text-right text-sm text-[#1c1c1c] dark:text-white hover:bg-[#f7f9fb] dark:hover:bg-[#252b3d] transition-colors">
-                      پرداز
+                      پنل هوشمند مدیریت تماس رهگیر
                     </button>
                   </div>
                 </div>
