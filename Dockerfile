@@ -19,6 +19,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NODE_ENV=production
+RUN npm i -g vite
 RUN npm run build
 
 # Production image - serve static files using a lightweight web server
