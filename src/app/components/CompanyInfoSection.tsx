@@ -255,7 +255,7 @@ export function CompanyInfoSection() {
             type="text"
             placeholder="مثال: ۱۲۳۴۵۶۷۸۹۰"
             maxLength={10}
-            className="w-full px-4 py-3 rounded-lg border outline-none transition-all text-right font-mono"
+            className="w-full px-4 py-3 rounded-lg border outline-none transition-all text-right"
             style={{
               backgroundColor: colors.backgroundSecondary,
               borderColor: colors.border,
@@ -277,7 +277,7 @@ export function CompanyInfoSection() {
             <input
               type="text"
               placeholder="شماره اقتصادی ۱۲ رقمی را وارد کنید"
-              className="w-full px-4 py-3 rounded-lg border outline-none transition-all text-right font-mono"
+              className="w-full px-4 py-3 rounded-lg border outline-none transition-all text-right"
               style={{
                 backgroundColor: colors.backgroundSecondary,
                 borderColor: colors.border,
@@ -298,7 +298,7 @@ export function CompanyInfoSection() {
             <input
               type="text"
               placeholder="شماره ثبت شرکت یا کد ملی شخص را وارد کنید"
-              className="w-full px-4 py-3 rounded-lg border outline-none transition-all text-right font-mono"
+              className="w-full px-4 py-3 rounded-lg border outline-none transition-all text-right"
               style={{
                 backgroundColor: colors.backgroundSecondary,
                 borderColor: colors.border,
@@ -321,7 +321,7 @@ export function CompanyInfoSection() {
             <input
               type="text"
               placeholder="مثال: ۱۴۰۴/۰۵/۱۷"
-              className="w-full px-4 py-3 rounded-lg border outline-none transition-all text-right font-mono"
+              className="w-full px-4 py-3 rounded-lg border outline-none transition-all text-right"
               style={{
                 backgroundColor: colors.backgroundSecondary,
                 borderColor: colors.border,
@@ -342,7 +342,7 @@ export function CompanyInfoSection() {
             <input
               type="tel"
               placeholder="مثال: ۰۲۱۸۸۷۷۷۷۷۷"
-              className="w-full px-4 py-3 rounded-lg border outline-none transition-all text-right font-mono"
+              className="w-full px-4 py-3 rounded-lg border outline-none transition-all text-right"
               style={{
                 backgroundColor: colors.backgroundSecondary,
                 borderColor: colors.border,

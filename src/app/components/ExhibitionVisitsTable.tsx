@@ -10,6 +10,7 @@ import {
   Building2,
   MapPin,
   Clock,
+  Search,
 } from "lucide-react";
 import { useCurrentColors } from "../contexts/ThemeColorsContext";
 import {
@@ -23,20 +24,17 @@ const priorityLabels = {
   medium: "متوسط",
   high: "بالا",
 };
-
 const priorityColors = {
   low: "#10b981",
   medium: "#f59e0b",
   high: "#ef4444",
 };
-
 const statusLabels = {
   pending: "در انتظار پیگیری",
   contacted: "تماس گرفته شده",
   converted: "تبدیل به مشتری",
   not_interested: "عدم علاقه",
 };
-
 const statusColors = {
   pending: "#6b7280",
   contacted: "#3b82f6",
@@ -46,8 +44,14 @@ const statusColors = {
 
 export function ExhibitionVisitsTable() {
   const colors = useCurrentColors();
-  const { visits, deleteVisit, searchTerm, filterStatus, filterPriority } =
-    useExhibitionVisits();
+  const {
+    visits,
+    deleteVisit,
+    searchTerm,
+    setSearchTerm,
+    filterStatus,
+    filterPriority,
+  } = useExhibitionVisits();
   const [editingVisit, setEditingVisit] = useState<ExhibitionVisit | null>(
     null,
   );
@@ -61,12 +65,10 @@ export function ExhibitionVisitsTable() {
         visit.phoneNumber.includes(searchTerm) ||
         visit.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
         visit.city.toLowerCase().includes(searchTerm.toLowerCase());
-
       const matchesStatus =
         filterStatus === "all" || visit.followUpStatus === filterStatus;
       const matchesPriority =
         filterPriority === "all" || visit.priority === filterPriority;
-
       return matchesSearch && matchesStatus && matchesPriority;
     });
   }, [visits, searchTerm, filterStatus, filterPriority]);
@@ -116,23 +118,53 @@ export function ExhibitionVisitsTable() {
           >
             بازدیدکنندگان
           </h2>
-        </div>
-
-  {/* Search */}
-        <div className="flex-1 relative">
-          <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="جستجو در نام، شماره تماس، شرکت یا شهر..."
-            className="w-full pr-12 pl-4 py-3 rounded-lg border focus:outline-none focus:ring-2 bg-white dark:bg-[#1a1f2e] dark:text-white dark:border-gray-700"
+        </div>{" "}
+        {/* Search */}
+        <div
+          className="rounded-lg p-4 border"
+          style={{
+            backgroundColor: colors.cardBackground,
+            borderColor: colors.border,
+          }}
+        >
+          <div
+            className="flex items-center gap-3 rounded-lg px-4 py-2.5 sm:py-3 border"
             style={{
+              backgroundColor: colors.backgroundSecondary,
               borderColor: colors.border,
             }}
-          />
+          >
+            <Search
+              className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
+              style={{ color: colors.textSecondary }}
+            />
+            <input
+              type="text"
+              placeholder="جستجو در مشتریان (نام، شماره تلفن، ایمیل)"
+              className="bg-transparent flex-1 outline-none text-xs sm:text-sm placeholder:opacity-60"
+              style={{ color: colors.textPrimary }}
+              dir="rtl"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="transition-colors flex-shrink-0"
+                style={{ color: colors.textSecondary }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = colors.textPrimary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = colors.textSecondary;
+                }}
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            )}
+          </div>
         </div>
-
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px]" dir="rtl">
@@ -307,7 +339,6 @@ export function ExhibitionVisitsTable() {
               ))}
             </tbody>
           </table>
-
           {filteredVisits.length === 0 && (
             <div
               className="p-8 text-center"
@@ -322,7 +353,6 @@ export function ExhibitionVisitsTable() {
             </div>
           )}
         </div>
-
         {/* Pagination */}
         {filteredVisits.length > 0 && (
           <div
@@ -372,7 +402,6 @@ export function ExhibitionVisitsTable() {
                 از {filteredVisits.length}
               </span>
             </div>
-
             <span
               className="text-xs md:text-sm whitespace-nowrap hidden md:inline"
               style={{ color: colors.textSecondary }}
@@ -381,7 +410,6 @@ export function ExhibitionVisitsTable() {
               {Math.min(endIndex, filteredVisits.length)} از{" "}
               {filteredVisits.length} مورد
             </span>
-
             <div className="flex items-center gap-1.5 md:gap-2 justify-center md:justify-end">
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
@@ -405,7 +433,6 @@ export function ExhibitionVisitsTable() {
                   style={{ color: colors.textSecondary }}
                 />
               </button>
-
               <div className="flex items-center gap-1">
                 {Array.from({ length: totalPages }, (_, i) => i + 1)
                   .filter((page) => {
@@ -418,7 +445,6 @@ export function ExhibitionVisitsTable() {
                   .map((page, index, array) => {
                     const prevPage = array[index - 1];
                     const showEllipsis = prevPage && page - prevPage > 1;
-
                     return (
                       <div key={page} className="flex items-center gap-1">
                         {showEllipsis && (
@@ -467,7 +493,6 @@ export function ExhibitionVisitsTable() {
                     );
                   })}
               </div>
-
               <button
                 onClick={() =>
                   setCurrentPage((prev) => Math.min(totalPages, prev + 1))
@@ -496,7 +521,6 @@ export function ExhibitionVisitsTable() {
           </div>
         )}
       </div>
-
       {/* Edit Modal */}
       {editingVisit && (
         <EditExhibitionVisitModal

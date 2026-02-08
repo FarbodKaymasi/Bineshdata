@@ -43,7 +43,7 @@ const mockUsers: User[] = [
     mobile: "09120509859",
     position: "مدیر عامل",
     birthDate: "1370/05/15",
-    role: "admin",
+    role: "manager",
     permissions: ["dashboard", "calls", "customers", "agents", "analytics", "reports", "settings", "users"],
     status: "active",
     lastLogin: "1402/12/16 13:50:00",
@@ -161,19 +161,8 @@ export function UsersAndPermissions() {
   };
 
   const handleEditUser = (user: User) => {
-    setIsEditMode(false);
-    setSelectedUser(user);
-    setFormData({
-      name: user.name,
-      lastName: user.lastName,
-      mobile: user.mobile,
-      birthDate: user.birthDate || "",
-      position: user.position,
-      role: user.role,
-      permissions: user.permissions,
-      avatar: user.avatar || "",
-    });
-    setShowAddUserModal(false);
+
+    setShowAddUserModal(true);
   };
 
   const handleDeleteUser = (user: User) => {
