@@ -121,7 +121,7 @@ export function ExhibitionVisitsTable() {
         </div>{" "}
         {/* Search */}
         <div
-          className="rounded-lg p-4 border"
+          className=" p-4 "
           style={{
             backgroundColor: colors.cardBackground,
             borderColor: colors.border,

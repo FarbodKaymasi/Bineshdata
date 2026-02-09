@@ -405,7 +405,7 @@ export function WarehouseInventoryBubbleChart() {
     (p) => p.status === "critical",
   ).length;
   const totalValue = warehouseProducts.reduce(
-    (sum, p) => sum + p.price * p.quantity,
+    (sum, p) => sum + p.price * p.quantity ,
     0,
   );
   const avgDays = Math.round(
@@ -416,7 +416,7 @@ export function WarehouseInventoryBubbleChart() {
   const chartData = warehouseProducts.map((product) => ({
     ...product,
     x: product.days,
-    y: product.price / 1000000, // تبدیل به میلیون
+    y: product.price / 100000, // تبدیل به میلیون
     z: product.quantity * 50, // اندازه حباب
   }));
 
@@ -624,7 +624,7 @@ export function WarehouseInventoryBubbleChart() {
                   <Cell
                     key={`cell-${index}`}
                     fill={`url(#bubble-${entry.status})`}
-                    style={{ fillOpacity: 0.4}}
+                    style={{ fillOpacity: 0.3}}
                     stroke={config.color}
                     strokeWidth={2}
                   />

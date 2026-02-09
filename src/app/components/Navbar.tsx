@@ -278,6 +278,11 @@ export function Navbar() {
                         onClick={() => {
                           setShowProfileMenu(false);
                           setActivePage("settings");
+                          window.history.replaceState(
+                            null,
+                            "",
+                            "/settings?tab=profile",
+                          );
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-right group"
                         style={{ color: colors.textPrimary }}
