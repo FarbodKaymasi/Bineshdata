@@ -595,7 +595,7 @@ export function CustomersPage() {
               ? "..."
               : `${(arpuData.value / 1000000).toLocaleString("fa-IR", {
                   maximumFractionDigits: 0,
-                })}م`}
+                })}`}
           </p>
           <p
             className="text-xs mt-1"
