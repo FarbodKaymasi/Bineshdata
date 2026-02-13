@@ -13,9 +13,14 @@ import { allSalesData } from "../data/salesData";
 
 export function SalesPage() {
   const colors = useCurrentColors();
+  
+  // تاریخ پیش‌فرض: 2020-02-13 تا 2026-02-13
+  const defaultFrom = new Date("2020-02-13T09:03:37.211Z");
+  const defaultTo = new Date("2026-02-13T09:03:37.211Z");
+  
   const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({
-    from: null,
-    to: null,
+    from: defaultFrom,
+    to: defaultTo,
   });
   const [showCalendar, setShowCalendar] = useState(false);
 
@@ -128,8 +133,8 @@ export function SalesPage() {
         </div>
       </div>
 
-      {/* Stats Section with Donut Chart */}
-      <SalesStatsSection />
+      {/* Stats Section with Donut Chart - حالا با API واقعی */}
+      <SalesStatsSection dateRange={dateRange} />
 
       {/* Sales Line Chart & Top Products */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -1,21 +1,21 @@
-import { 
-  Package, 
-  Plus, 
-  Search, 
-  TrendingUp, 
-  RefreshCw, 
-  Calendar, 
+import {
+  Package,
+  Plus,
+  Search,
+  TrendingUp,
+  RefreshCw,
+  Calendar,
   X,
 } from "lucide-react";
 import { useCurrentColors } from "../contexts/ThemeColorsContext";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ProductsTableWithFilters } from "../components/ProductsTableWithFilters";
 import { ColumnConfig } from "../components/ColumnCustomizer";
 import { ThemedButton } from "../components/ThemedButton";
 import { ReportDownload, ReportSection } from "../components/ReportDownload";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   code: string;
   category: string;
@@ -23,6 +23,17 @@ interface Product {
   price: string;
   sales: string;
 }
+
+// Map category numbers to names
+const getCategoryName = (categoryNumber: number): string => {
+  const categoryMap: Record<number, string> = {
+    1: "فرش",
+    2: "موکت",
+    3: "تابلو فرش",
+    4: "سایر",
+  };
+  return categoryMap[categoryNumber] || "نامشخص";
+};
 
 export function ProductsPage() {
   const colors = useCurrentColors();
@@ -36,109 +47,133 @@ export function ProductsPage() {
     { key: "sales", label: "فروش (کل تومان)", visible: true },
   ]);
 
+  // API state
+  const [loading, setLoading] = useState(true);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [selectedProductType, setSelectedProductType] = useState<string>("Carpet");
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Pagination state (managed by parent)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Product type options
+  const productTypeOptions = [
+    { value: "None", label: "همه" },
+    { value: "Carpet", label: "فرش" },
+    { value: "RawMaterials", label: "مواد خام" },
+    { value: "Rug", label: "گلیم" },
+  ];
+
+  // Fetch products directly from the API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const body: any = {
+          paggination: {
+            pageNumber: 1,
+            pageSize: 1000, // you can increase this if the backend allows
+          },
+        };
+
+        // For "همه" we omit categoryDto so we get all products
+        if (selectedProductType !== "None") {
+          body.categoryDto = {
+            productCategory: selectedProductType,
+          };
+        }
+
+        const response = await fetch(
+          "https://panel.bineshafzar.ir/api/ProductApi/GetProducts",
+          {
+            method: "POST",
+            headers: {
+              accept:
+                "application/json;odata.metadata=minimal;odata.streaming=true",
+              "Content-Type":
+                "application/json;odata.metadata=minimal;odata.streaming=true",
+            },
+            body: JSON.stringify(body),
+          }
+        );
+
+        const data = await response.json();
+
+        if (data.code === 200 && data.status === "success") {
+          const mappedProducts: Product[] = data.body.items.map((item: any) => ({
+            id: item.productId,
+            name: item.productName,
+            code: item.detailedType,
+            category: getCategoryName(item.category),
+            warehouse: getCategoryName(item.category),
+            price: item.priceUnit.toLocaleString("fa-IR"),
+            sales: item.totalSale.toLocaleString("fa-IR"),
+          }));
+
+          setAllProducts(mappedProducts);
+          setTotalCount(data.body.totalCount || 0);
+        } else {
+          console.warn("API returned non-success response:", data);
+          setAllProducts([]);
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        // Fallback mock data
+        setAllProducts([
+          {
+            id: "1",
+            name: "فرش ۴۰۰*۳ شانه تراکم ۱۶۰۰ پرستیژ برجسته درجه ۱",
+            code: "+۲۶۰",
+            category: "فرش",
+            warehouse: "فرش",
+            price: "۲۵,۰۰۰,۰۰۰",
+            sales: "۲,۴۰۰,۰۰۰,۰۰۰",
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [selectedProductType]);
+
+  const handlePageChange = (newPage: number) => setCurrentPage(newPage);
+
+  const handleRowsPerPageChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+  };
+
   const stats = [
-    { 
-      icon: Package, 
-      label: "کل محصولات", 
-      value: "۶۰۰۰", 
+    {
+      icon: Package,
+      label: "کل محصولات",
+      value: loading ? "..." : totalCount.toLocaleString("fa-IR"),
       unit: "عدد",
       growth: "رشد نسبت به سال قبل: ٪۵۰+",
-      color: colors.primary 
+      color: colors.primary,
     },
-    { 
-      icon: RefreshCw, 
-      label: "نرخ گردش موجودی", 
-      value: "۲", 
+    {
+      icon: RefreshCw,
+      label: "نرخ گردش موجودی",
+      value: "۲",
       unit: "بار",
       growth: "رشد نسبت به سال قبل: ٪۵۰+",
-      color: colors.success 
+      color: colors.success,
     },
-    { 
-      icon: Calendar, 
-      label: "روزهای گردش موجودی", 
-      value: "۱۸۰", 
+    {
+      icon: Calendar,
+      label: "روزهای گردش موجودی",
+      value: "۱۸۰",
       unit: "روز",
       growth: "رشد نسبت به سال قبل: ٪۵۰+",
-      color: colors.warning 
+      color: colors.warning,
     },
   ];
 
-  const allProducts: Product[] = [
-    {
-      id: 1,
-      name: "فرش ۴۰۰*۳ شانه تراکم ۱۶۰۰ پرستیژ برجسته درجه ۱",
-      code: "+۲۶۰",
-      category: "فرش",
-      warehouse: "فرش",
-      price: "۲۵,۰۰۰,۰۰۰",
-      sales: "۲,۴۰۰,۰۰۰,۰۰۰"
-    },
-    {
-      id: 2,
-      name: "فرش ۴۰۰*۳ شانه تراکم ۱۶۰۰ پرستیژ برجسته درجه ۱",
-      code: "+۲۶۰",
-      category: "فرش",
-      warehouse: "فرش",
-      price: "۲۵,۰۰۰,۰۰۰",
-      sales: "۲,۴۰۰,۰۰۰,۰۰۰"
-    },
-    {
-      id: 3,
-      name: "فرش ۴۰۰*۳ شانه تراکم ۱۶۰۰ پرستیژ برجسته درجه ۱",
-      code: "+۲۶۰",
-      category: "فرش",
-      warehouse: "فرش",
-      price: "۲۵,۰۰۰,۰۰۰",
-      sales: "۲,۴۰۰,۰۰۰,۰۰۰"
-    },
-    {
-      id: 4,
-      name: "فرش ۴۰۰*۳ شانه تراکم ۱۶۰۰ پرستیژ برجسته درجه ۱",
-      code: "+۲۶۰",
-      category: "فرش",
-      warehouse: "فرش",
-      price: "۲۵,۰۰۰,۰۰۰",
-      sales: "۲,۴۰۰,۰۰۰,۰۰۰"
-    },
-    {
-      id: 5,
-      name: "فرش ۴۰۰*۳ شانه تراکم ۱۶۰۰ پرستیژ برجسته درجه ۱",
-      code: "+۲۶۰",
-      category: "فرش",
-      warehouse: "فرش",
-      price: "۲۵,۰۰۰,۰۰۰",
-      sales: "۲,۴۰۰,۰۰۰,۰۰۰"
-    },
-    {
-      id: 6,
-      name: "فرش ۵۰۰*۴ شانه تراکم ۲۰۰۰ الیت برجسته درجه ۱",
-      code: "+۳۲۰",
-      category: "فرش",
-      warehouse: "انبار مرکزی",
-      price: "۳۵,۰۰۰,۰۰۰",
-      sales: "۳,۵۰۰,۰۰۰,۰۰۰"
-    },
-    {
-      id: 7,
-      name: "موکت ۷۰۰*۵ شانه تراکم ۲۵۰۰ لوکس",
-      code: "+۴۵۰",
-      category: "موکت",
-      warehouse: "انبار شرق",
-      price: "۱۸,۰۰۰,۰۰۰",
-      sales: "۱,۸۰۰,۰۰۰,۰۰۰"
-    },
-    {
-      id: 8,
-      name: "تابلو فرش دستباف ۱۰۰*۱۵۰",
-      code: "+۱۲۰",
-      category: "تابلو فرش",
-      warehouse: "انبار غرب",
-      price: "۴۵,۰۰۰,۰۰۰",
-      sales: "۹۰۰,۰۰۰,۰۰۰"
-    },
-  ];
-
-  // Filter products based on search
+  // Filter products based on search (client-side)
   const filteredProducts = useMemo(() => {
     return allProducts.filter(
       (product) =>
@@ -147,36 +182,29 @@ export function ProductsPage() {
         product.category.includes(searchQuery) ||
         product.warehouse.includes(searchQuery)
     );
-  }, [searchQuery]);
+  }, [searchQuery, allProducts]);
 
-  const handleEdit = (productId: number) => {
-    console.log("Edit product:", productId);
-    // Add edit logic here
-  };
+  const handleEdit = (productId: string) => console.log("Edit product:", productId);
+  const handleDelete = (productId: string) => console.log("Delete product:", productId);
 
-  const handleDelete = (productId: number) => {
-    console.log("Delete product:", productId);
-    // Add delete logic here
-  };
+  // Report sections
+  const visibleProductColumns = customColumns.filter((col) => col.visible);
 
-  // Prepare report sections
-  const visibleProductColumns = customColumns.filter(col => col.visible);
-  
   const reportSections: ReportSection[] = [
     {
       title: "آمار کلی محصولات",
       data: [
-        { "شاخص": "کل محصولات", "مقدار": "6000", "تغییرات": "+50%" },
-        { "شاخص": "نرخ گردش موجودی", "مقدار": "2", "تغییرات": "+50%" },
-        { "شاخص": "روزهای گردش موجودی", "مقدار": "180", "تغییرات": "+50%" },
+        { شاخص: "کل محصولات", مقدار: "6000", تغییرات: "+50%" },
+        { شاخص: "نرخ گردش موجودی", مقدار: "2", تغییرات: "+50%" },
+        { شاخص: "روزهای گردش موجودی", مقدار: "180", تغییرات: "+50%" },
       ],
-      headers: ["شاخص", "مقدار", "تغییرات"]
+      headers: ["شاخص", "مقدار", "تغییرات"],
     },
     {
       title: "لیست محصولات",
-      data: filteredProducts.map(p => {
+      data: filteredProducts.map((p) => {
         const row: Record<string, any> = {};
-        visibleProductColumns.forEach(col => {
+        visibleProductColumns.forEach((col) => {
           const label = col.customLabel || col.label;
           switch (col.key) {
             case "name":
@@ -198,16 +226,13 @@ export function ProductsPage() {
               row[label] = p.sales;
               break;
             default:
-              if (col.isCustom) {
-                row[label] = "-";
-              }
-              break;
+              if (col.isCustom) row[label] = "-";
           }
         });
         return row;
       }),
-      headers: visibleProductColumns.map(col => col.customLabel || col.label)
-    }
+      headers: visibleProductColumns.map((col) => col.customLabel || col.label),
+    },
   ];
 
   return (
@@ -229,7 +254,7 @@ export function ProductsPage() {
             className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg flex-1 sm:flex-initial"
             icon={<Plus className="w-4 h-4 sm:w-5 sm:h-5" />}
           >
-            <span className="text-xs sm:text-sm">افزودن محصول جدید</span>
+            افزودن محصول جدید
           </ThemedButton>
         </div>
       </div>
@@ -277,53 +302,6 @@ export function ProductsPage() {
         })}
       </div>
 
-      {/* Search Bar */}
-      {/* <div
-        className="rounded-lg p-4 border"
-        style={{
-          backgroundColor: colors.cardBackground,
-          borderColor: colors.border,
-        }}
-      >
-        <div
-          className="flex items-center gap-3 rounded-lg px-4 py-2.5 sm:py-3 border"
-          style={{
-            backgroundColor: colors.backgroundSecondary,
-            borderColor: colors.border,
-          }}
-        >
-          <Search
-            className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
-            style={{ color: colors.textSecondary }}
-          />
-          <input
-            type="text"
-            placeholder="جستجو در محصولات (نام، کد، دسته‌بندی، انبار)"
-            className="bg-transparent flex-1 outline-none text-xs sm:text-sm placeholder:opacity-60"
-            style={{ color: colors.textPrimary }}
-            dir="rtl"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="transition-colors flex-shrink-0"
-              style={{ color: colors.textSecondary }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = colors.textPrimary;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = colors.textSecondary;
-              }}
-            >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          )}
-        </div>
-      </div> */}
-
       {/* Products Table */}
       <ProductsTableWithFilters
         products={filteredProducts}
@@ -331,6 +309,14 @@ export function ProductsPage() {
         setCustomColumns={setCustomColumns}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
+        currentPage={currentPage}
+        rowsPerPage={pageSize}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+        loading={loading}
+        selectedProductType={selectedProductType}
+        onProductTypeChange={setSelectedProductType}
+        productTypeOptions={productTypeOptions}
       />
     </div>
   );

@@ -20,9 +20,11 @@ import {
 import { FilterPanel } from "./FilterPanel";
 import { CustomColumnCell } from "./CustomColumnCell";
 import { SavedFiltersButton } from "./SavedFiltersButton";
+import { ProductEventsPanel } from "./ProductEventsPanel";
+import { productAPI, ProductEventData } from "../api/productAPI";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   code: string;
   category: string;
@@ -45,8 +47,19 @@ interface ProductsTableProps {
   products: Product[];
   customColumns?: ColumnConfig[];
   setCustomColumns?: (columns: ColumnConfig[]) => void;
-  handleEdit?: (productId: number) => void;
-  handleDelete?: (productId: number) => void;
+  handleEdit?: (productId: string) => void;
+  handleDelete?: (productId: string) => void;
+  // Pagination props
+  currentPage?: number;
+  totalPages?: number;
+  rowsPerPage?: number;
+  onPageChange?: (page: number) => void;
+  onRowsPerPageChange?: (rows: number) => void;
+  loading?: boolean;
+  // Product type filter props
+  selectedProductType?: string;
+  onProductTypeChange?: (type: string) => void;
+  productTypeOptions?: Array<{ value: string; label: string }>;
 }
 
 export function ProductsTableWithFilters({
@@ -55,6 +68,15 @@ export function ProductsTableWithFilters({
   setCustomColumns,
   handleEdit,
   handleDelete,
+  currentPage: externalCurrentPage,
+  totalPages: externalTotalPages,
+  rowsPerPage: externalRowsPerPage,
+  onPageChange,
+  onRowsPerPageChange,
+  loading = false,
+  selectedProductType,
+  onProductTypeChange,
+  productTypeOptions,
 }: ProductsTableProps) {
   const colors = useCurrentColors();
   const dispatch = useAppDispatch();
@@ -64,8 +86,31 @@ export function ProductsTableWithFilters({
   );
   const tableFilters = activeFilters[TABLE_ID] || [];
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  // Use external pagination if provided, otherwise use internal
+  const [internalCurrentPage, setInternalCurrentPage] = useState(1);
+  const [internalRowsPerPage, setInternalRowsPerPage] = useState(10);
+  
+  const currentPage = externalCurrentPage !== undefined ? externalCurrentPage : internalCurrentPage;
+  const rowsPerPage = externalRowsPerPage !== undefined ? externalRowsPerPage : internalRowsPerPage;
+  
+  const setCurrentPage = (page: number | ((prev: number) => number)) => {
+    const newPage = typeof page === 'function' ? page(currentPage) : page;
+    if (onPageChange) {
+      onPageChange(newPage);
+    } else {
+      setInternalCurrentPage(newPage);
+    }
+  };
+
+  const setRowsPerPage = (rows: number) => {
+    if (onRowsPerPageChange) {
+      onRowsPerPageChange(rows);
+    } else {
+      setInternalRowsPerPage(rows);
+      setInternalCurrentPage(1); // Reset to page 1 when changing rows per page
+    }
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const [localVisibleColumns, setLocalVisibleColumns] = useState<
     ColumnConfig[]
@@ -74,6 +119,40 @@ export function ProductsTableWithFilters({
     Record<string, Record<string, string | string[]>>
   >({});
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  // Product events panel state
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [eventData, setEventData] = useState<ProductEventData | null>(null);
+  const [eventsLoading, setEventsLoading] = useState(false);
+
+  // Function to fetch product events
+  const handleViewDetails = async (product: Product) => {
+    setSelectedProduct(product);
+    setIsPanelOpen(true);
+    setEventsLoading(true);
+    setEventData(null);
+
+    try {
+      const response = await productAPI.getProductEvents({
+        listDto: {
+          productIdList: [product.id],
+        },
+        paggination: {
+          pageNumber: 1,
+          pageSize: 100,
+        },
+      });
+
+      if (response.code === 200 && response.body.items.length > 0) {
+        setEventData(response.body.items[0]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch product events:", error);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
 
   // Load custom column data from localStorage
   useEffect(() => {
@@ -222,9 +301,7 @@ export function ProductsTableWithFilters({
           <td key={column.key} className="p-3">
             <div className="flex items-center gap-2">
               <button
-                onClick={() => {
-                  console.log("View product details:", product.id);
-                }}
+                onClick={() => handleViewDetails(product)}
                 className="p-2 rounded-lg transition-colors"
                 style={{ color: colors.primary }}
                 onMouseEnter={(e) => {
@@ -355,15 +432,27 @@ export function ProductsTableWithFilters({
   ]);
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredProducts.length / rowsPerPage);
+  // If external totalPages is provided, use it (for API pagination)
+  // Otherwise calculate based on filtered data (for client-side pagination)
+  const totalPages = externalTotalPages !== undefined 
+    ? externalTotalPages 
+    : Math.ceil(filteredProducts.length / rowsPerPage);
+  
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
-  const currentPageData = filteredProducts.slice(startIndex, endIndex);
+  
+  // If using API pagination, show all products (already paginated by server)
+  // Otherwise slice for client-side pagination
+  const currentPageData = externalTotalPages !== undefined 
+    ? filteredProducts 
+    : filteredProducts.slice(startIndex, endIndex);
 
-  // Reset to page 1 when filters or search change
+  // Reset to page 1 when filters or search change (only for client-side pagination)
   useEffect(() => {
-    setCurrentPage(1);
-  }, [tableFilters, rowsPerPage, searchQuery]);
+    if (externalTotalPages === undefined) {
+      setCurrentPage(1);
+    }
+  }, [tableFilters, searchQuery, externalTotalPages]); // Removed rowsPerPage from dependencies!
 
   const getOperatorLabel = (operator: string) => {
     const labels: Record<string, string> = {
@@ -400,6 +489,39 @@ export function ProductsTableWithFilters({
           محصولات
         </h2>
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+          {/* Product Type Filter */}
+          {productTypeOptions && onProductTypeChange && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm whitespace-nowrap" style={{ color: colors.textSecondary }}>
+                نوع:
+              </span>
+              <select
+                value={selectedProductType || "Carpet"}
+                onChange={(e) => onProductTypeChange(e.target.value)}
+                className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none transition-colors"
+                style={{
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border,
+                  color: colors.textPrimary,
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = colors.primary;
+                  e.currentTarget.style.boxShadow = `0 0 0 2px ${colors.primary}20`;
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = colors.border;
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                {productTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          
           <SavedFiltersButton tableId="products-table" />
           <ColumnCustomizer
             tableId="products-table"
@@ -861,6 +983,16 @@ export function ProductsTableWithFilters({
               ?.label || openColumnFilter
           }
           onClose={() => dispatch(setOpenColumnFilter(null))}
+        />
+      )}
+
+      {/* Product Events Panel */}
+      {isPanelOpen && selectedProduct && (
+        <ProductEventsPanel
+          product={selectedProduct}
+          eventData={eventData}
+          loading={eventsLoading}
+          onClose={() => setIsPanelOpen(false)}
         />
       )}
     </div>
