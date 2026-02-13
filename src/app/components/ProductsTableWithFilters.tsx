@@ -20,8 +20,6 @@ import {
 import { FilterPanel } from "./FilterPanel";
 import { CustomColumnCell } from "./CustomColumnCell";
 import { SavedFiltersButton } from "./SavedFiltersButton";
-import { ProductEventsPanel } from "./ProductEventsPanel";
-import { productAPI, ProductEventData } from "../api/productAPI";
 
 interface Product {
   id: string;
@@ -49,6 +47,7 @@ interface ProductsTableProps {
   setCustomColumns?: (columns: ColumnConfig[]) => void;
   handleEdit?: (productId: string) => void;
   handleDelete?: (productId: string) => void;
+  handleViewDetails?: (productId: string) => void;
   // Pagination props
   currentPage?: number;
   totalPages?: number;
@@ -56,10 +55,6 @@ interface ProductsTableProps {
   onPageChange?: (page: number) => void;
   onRowsPerPageChange?: (rows: number) => void;
   loading?: boolean;
-  // Product type filter props
-  selectedProductType?: string;
-  onProductTypeChange?: (type: string) => void;
-  productTypeOptions?: Array<{ value: string; label: string }>;
 }
 
 export function ProductsTableWithFilters({
@@ -68,15 +63,13 @@ export function ProductsTableWithFilters({
   setCustomColumns,
   handleEdit,
   handleDelete,
+  handleViewDetails,
   currentPage: externalCurrentPage,
   totalPages: externalTotalPages,
   rowsPerPage: externalRowsPerPage,
   onPageChange,
   onRowsPerPageChange,
   loading = false,
-  selectedProductType,
-  onProductTypeChange,
-  productTypeOptions,
 }: ProductsTableProps) {
   const colors = useCurrentColors();
   const dispatch = useAppDispatch();
@@ -119,40 +112,6 @@ export function ProductsTableWithFilters({
     Record<string, Record<string, string | string[]>>
   >({});
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
-  // Product events panel state
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [eventData, setEventData] = useState<ProductEventData | null>(null);
-  const [eventsLoading, setEventsLoading] = useState(false);
-
-  // Function to fetch product events
-  const handleViewDetails = async (product: Product) => {
-    setSelectedProduct(product);
-    setIsPanelOpen(true);
-    setEventsLoading(true);
-    setEventData(null);
-
-    try {
-      const response = await productAPI.getProductEvents({
-        listDto: {
-          productIdList: [product.id],
-        },
-        paggination: {
-          pageNumber: 1,
-          pageSize: 100,
-        },
-      });
-
-      if (response.code === 200 && response.body.items.length > 0) {
-        setEventData(response.body.items[0]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch product events:", error);
-    } finally {
-      setEventsLoading(false);
-    }
-  };
 
   // Load custom column data from localStorage
   useEffect(() => {
@@ -301,7 +260,13 @@ export function ProductsTableWithFilters({
           <td key={column.key} className="p-3">
             <div className="flex items-center gap-2">
               <button
-                onClick={() => handleViewDetails(product)}
+                onClick={() => {
+                  if (handleViewDetails) {
+                    handleViewDetails(product.id);
+                  } else {
+                    console.log("View product details:", product.id);
+                  }
+                }}
                 className="p-2 rounded-lg transition-colors"
                 style={{ color: colors.primary }}
                 onMouseEnter={(e) => {
@@ -489,39 +454,6 @@ export function ProductsTableWithFilters({
           محصولات
         </h2>
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-          {/* Product Type Filter */}
-          {productTypeOptions && onProductTypeChange && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm whitespace-nowrap" style={{ color: colors.textSecondary }}>
-                نوع:
-              </span>
-              <select
-                value={selectedProductType || "Carpet"}
-                onChange={(e) => onProductTypeChange(e.target.value)}
-                className="px-3 py-1.5 border rounded-lg text-sm focus:outline-none transition-colors"
-                style={{
-                  backgroundColor: colors.cardBackground,
-                  borderColor: colors.border,
-                  color: colors.textPrimary,
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = colors.primary;
-                  e.currentTarget.style.boxShadow = `0 0 0 2px ${colors.primary}20`;
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = colors.border;
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              >
-                {productTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          
           <SavedFiltersButton tableId="products-table" />
           <ColumnCustomizer
             tableId="products-table"
@@ -983,16 +915,6 @@ export function ProductsTableWithFilters({
               ?.label || openColumnFilter
           }
           onClose={() => dispatch(setOpenColumnFilter(null))}
-        />
-      )}
-
-      {/* Product Events Panel */}
-      {isPanelOpen && selectedProduct && (
-        <ProductEventsPanel
-          product={selectedProduct}
-          eventData={eventData}
-          loading={eventsLoading}
-          onClose={() => setIsPanelOpen(false)}
         />
       )}
     </div>

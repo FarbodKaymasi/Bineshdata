@@ -8,8 +8,9 @@ import { ReportDownload, ReportSection } from "../components/ReportDownload";
 import { SalesLineChart } from "../components/SalesLineChart";
 import { TopProductsWidget } from "../components/TopProductsWidget";
 import { TopSellersChart } from "../components/TopSellersChart";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { allSalesData } from "../data/salesData";
+import { salesAPI } from "../api/salesAPI";
 
 export function SalesPage() {
   const colors = useCurrentColors();
@@ -23,6 +24,50 @@ export function SalesPage() {
     to: defaultTo,
   });
   const [showCalendar, setShowCalendar] = useState(false);
+
+  // Sales chart data state
+  const [salesChartData, setSalesChartData] = useState<any[]>([]);
+  const [salesChartLoading, setSalesChartLoading] = useState(true);
+  const [salesChartError, setSalesChartError] = useState<string | null>(null);
+
+  // Fetch sales chart data
+  useEffect(() => {
+    const fetchSalesData = async () => {
+      if (!dateRange.from || !dateRange.to) return;
+
+      setSalesChartLoading(true);
+      setSalesChartError(null);
+
+      try {
+        const response = await salesAPI.getCustomerCategorizedSales({
+          dateFilter: {
+            startTime: dateRange.from.toISOString(),
+            endTime: dateRange.to.toISOString(),
+            timeFrameUnit: 3, // Monthly
+          },
+          categoryDto: {
+            productCategory: "",
+          },
+          provience: {
+            provinece: "string",
+          },
+        });
+
+        if (response.code === 200 && response.status === "success") {
+          setSalesChartData(response.body.sales);
+        } else {
+          setSalesChartError("خطا در دریافت داده‌های نمودار");
+        }
+      } catch (err) {
+        console.error("Error fetching sales chart data:", err);
+        setSalesChartError("خطا در دریافت داده‌های نمودار");
+      } finally {
+        setSalesChartLoading(false);
+      }
+    };
+
+    fetchSalesData();
+  }, [dateRange]);
 
   const formatDateRange = () => {
     if (!dateRange.from || !dateRange.to) return "انتخاب بازه زمانی";
@@ -137,23 +182,24 @@ export function SalesPage() {
       <SalesStatsSection dateRange={dateRange} />
 
       {/* Sales Line Chart & Top Products */}
+      <SalesLineChart data={salesChartData} loading={salesChartLoading} error={salesChartError} />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <SalesLineChart />
+      
         </div>
         <div>
-          <TopProductsWidget />
+          {/* <TopProductsWidget /> */}
         </div>
       </div>
 
       {/* Top Sellers Chart */}
-      <TopSellersChart />
+      {/* <TopSellersChart /> */}
 
       {/* Provinces Sales Map */}
       <ProvincesSalesMap />
 
       {/* Sales Table */}
-      <SalesTable data={allSalesData} />
+      {/* <SalesTable data={allSalesData} /> */}
 
       {/* Calendar Modal */}
       {showCalendar && (
