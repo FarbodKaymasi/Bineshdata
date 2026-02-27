@@ -7,6 +7,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useCurrentColors } from "../contexts/ThemeColorsContext";
+import { AIExportButtons } from "./AIExportButtons";
 
 interface DonutChartData {
   title?: string;
@@ -52,11 +53,19 @@ export function AIDonutChart({ data }: AIDonutChartProps) {
 
   return (
     <div className="w-full space-y-2" dir="ltr">
-      {data.title && (
-        <h3 className="text-sm font-medium text-right" style={{ color: colors.textPrimary }} dir="rtl">
-          {data.title}
-        </h3>
-      )}
+      <div className="flex items-center justify-between" dir="rtl">
+        {data.title && (
+          <h3 className="text-sm font-medium text-right" style={{ color: colors.textPrimary }}>
+            {data.title}
+          </h3>
+        )}
+        <AIExportButtons
+          showExcel
+          title={data.title || "نمودار دونات"}
+          data={data.data}
+          columns={[nameKey, valueKey]}
+        />
+      </div>
       <div className="w-full h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
